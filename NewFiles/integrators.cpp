@@ -8,166 +8,145 @@
 namespace ODE_Integrator
 {
 
-	//Namespace that includes all of the integration methods
-	namespace Integrators
-	{	
-
-		Eigen::MatrixXd positions;
-		Eigen::MatrixXd velocities;
-
-		int num_particles;
-
-		void leap_frog(double dt)
+	namespace LeapFrog
+	{
+		
+		void LF_Step(double dt)
 		{
 			positions += (dt/2) * velocities;
-			velocities += dt * calc_accelerations(positions, velocities, t);
+			velocities += dt * ODE_function(positions, velocities, t);
 			positions += (dt/2) * velocities;
 		}
 
+	}
 
-		namespace AdaptiveStep
+	namespace AdaptiveStep
+	{
+
+		double dt_min;
+	
+		void kick(double dt, Eigen::VectorXi &to_be_kicked)
 		{
 
-			double dt_min;
+			Eigen::MatrixXd accelerations = ODE_function(positions, velocities, t);
 
-			
-			template <typename v>
-			double magnitude(const v vector)
+			for (int i = 0; i < num_particles; i++)
 			{
-				return std::sqrt( vector[0]*vector[0] + vector[1]*vector[1] + vector[2]*vector[2] );
-			}
-
-			
-			void kick(double dt, Eigen::VectorXi &to_be_kicked)
-			{
-				std::cout << to_be_kicked << std::endl;
-
-				Eigen::MatrixXd accelerations = calc_accelerations(positions, velocities, t);
-
-				for (int i = 0; i < num_particles; i++)
-				{
-					if (to_be_kicked[i])
-					{
-						velocities.row(i) += dt * accelerations.row(i); 
-					}
-				}
-
-			}
-
-			void kick(double dt)
-			{
-				Eigen::MatrixXd accelerations = calc_accelerations(positions, velocities, t);
-
-				for (int i = 0; i < num_particles; i++)
+				if (to_be_kicked[i])
 				{
 					velocities.row(i) += dt * accelerations.row(i); 
 				}
 			}
 
-			void drift(double dt, Eigen::VectorXi &to_be_drifted)
-			{
-				for (int i = 0; i < num_particles; i++)
-				{
-					if (to_be_drifted[i])
-					{
-						positions.row(i) += dt * velocities.row(i); 
-					}
-				}				
-			}
+		}
 
-			void drift(double dt)
+		void kick(double dt)
+		{
+			Eigen::MatrixXd accelerations = ODE_function(positions, velocities, t);
+
+			for (int i = 0; i < num_particles; i++)
 			{
-				for (int i = 0; i < num_particles; i++)
+				velocities.row(i) += dt * accelerations.row(i); 
+			}
+		}
+
+		void drift(double dt, Eigen::VectorXi &to_be_drifted)
+		{
+			for (int i = 0; i < num_particles; i++)
+			{
+				if (to_be_drifted[i])
 				{
 					positions.row(i) += dt * velocities.row(i); 
-				}				
-			}
+				}
+			}				
+		}
 
-			Eigen::VectorXi select(double dt, Eigen::VectorXi &already_on_timestep)
+		void drift(double dt)
+		{
+			for (int i = 0; i < num_particles; i++)
 			{
+				positions.row(i) += dt * velocities.row(i); 
+			}				
+		}
+
+		Eigen::VectorXi select(double dt, Eigen::VectorXi &already_on_timestep)
+		{
 				
-				Eigen::VectorXi on_timestep;
-				on_timestep.resize(num_particles,1);
+			Eigen::VectorXi on_timestep;
+			on_timestep.resize(num_particles,1);
 
-				bool is_on_timestep = false;
-				double average_velocity = 0;
-				double ideal_dt;
-				dt_min = dt;
+			bool is_on_timestep = false;
+			double average_velocity = 0;
+			double ideal_dt;
+			dt_min = dt;
 	
-				for (int i = 0; i < num_particles; i ++)
-				{
-					average_velocity += magnitude( velocities.row(i) );
-				}
-				average_velocity = average_velocity / num_particles;
-
-				for (int i = 0; i < num_particles; i++)
-				{
-
-					ideal_dt = average_velocity / ( 1 + magnitude( velocities.row(i) ) );
-					
-					is_on_timestep = false;
-
-					if (ideal_dt >= dt)
-					{
-						is_on_timestep = true;
-					}
-					else
-					{
-						dt_min = ideal_dt;
-					}
-
-					if ( (is_on_timestep) and (not already_on_timestep[i]) )
-					{
-						already_on_timestep[i] = 1;
-						on_timestep[i] = 1;
-					}
-					else
-					{	
-						on_timestep[i] = 0;
-					}
-				}
-
-				return on_timestep;
-
+			for (int i = 0; i < num_particles; i ++)
+			{
+				average_velocity += magnitude( velocities.row(i) );
 			}
+			average_velocity = average_velocity / num_particles;
 
-			void adaptive_step_recurse(double dt, Eigen::VectorXi already_on_timestep)
+			for (int i = 0; i < num_particles; i++)
 			{
 
-				//std::cout << dt << std::endl;
+				ideal_dt = average_velocity / ( 1 + magnitude( velocities.row(i) ) );
+					
+				is_on_timestep = false;
 
-				drift(dt/2);
-
-				Eigen::VectorXi on_this_timestep = select(dt, already_on_timestep);
-
-				std::cout << "dt: " << dt << " dt_min: " << dt_min << std::endl;
- 				
- 				if (dt <= dt_min)
+				if (ideal_dt >= dt)
 				{
-					kick(dt, on_this_timestep);
-					drift(dt/2);
+					is_on_timestep = true;
 				}
-
 				else
 				{
-					//std::cout << "recursed" << std::endl;
-
-					drift(-dt/2);
-					
-					adaptive_step_recurse(dt/2, already_on_timestep);
-					
-					kick(dt,on_this_timestep);
-
-					adaptive_step_recurse(dt/2, already_on_timestep);
-
+					dt_min = ideal_dt;
 				}
 
-
+				if ( (is_on_timestep) and (not already_on_timestep[i]) )
+				{
+					already_on_timestep[i] = 1;
+					on_timestep[i] = 1;
+				}
+				else
+				{	
+					on_timestep[i] = 0;
+				}
 			}
+
+			return on_timestep;
 
 		}
 
-		void adaptive_step(double dt)
+		void adaptive_step_recurse(double dt, Eigen::VectorXi already_on_timestep)
+		{
+
+			drift(dt/2);
+
+			Eigen::VectorXi on_this_timestep = select(dt, already_on_timestep);
+
+			std::cout << "dt: " << dt << " dt_min: " << dt_min << std::endl;
+ 				
+ 			if (dt <= dt_min)
+			{
+				kick(dt, on_this_timestep);
+				drift(dt/2);
+			}
+
+			else
+			{
+
+				drift(-dt/2);
+					
+				adaptive_step_recurse(dt/2, already_on_timestep);
+					
+				kick(dt,on_this_timestep);
+
+				adaptive_step_recurse(dt/2, already_on_timestep);
+
+			}
+		}
+
+		void Adaptive_Step(double dt = 1)
 		{
 			Eigen::VectorXi already_on_timestep;
 			already_on_timestep.resize(num_particles,1);
@@ -180,75 +159,76 @@ namespace ODE_Integrator
 			AdaptiveStep::adaptive_step_recurse(dt,already_on_timestep);
 
 		}
+	}
 
-		namespace RungaKutta
+
+	namespace RungaKutta
+	{
+
+		std::vector<Eigen::Matrix<double,8,3> > b_values;
+		std::vector<Eigen::Matrix<double,8,3> > g_values;
+			
+		Eigen::MatrixXd init_pos;
+		Eigen::MatrixXd init_vel;
+		Eigen::MatrixXd init_acc;
+			
+		Eigen::Matrix<double,8,8> c_m;
+
+		static const double h[9]  = { 0.0, 0.0562625605369221464656521910318, 0.180240691736892364987579942780, 0.352624717113169637373907769648, 0.547153626330555383001448554766, 0.734210177215410531523210605558, 0.885320946839095768090359771030, 0.977520613561287501891174488626};
+			
+		void find_c_m(int j, int k) 
 		{
-
-			std::vector<Eigen::Matrix<double,8,3> > b_values;
-			std::vector<Eigen::Matrix<double,8,3> > g_values;
-			
-			Eigen::MatrixXd init_pos;
-			Eigen::MatrixXd init_vel;
-			Eigen::MatrixXd init_acc;
-			
-			Eigen::Matrix<double,8,8> c_m;
-
-			static const double h[9]  = { 0.0, 0.0562625605369221464656521910318, 0.180240691736892364987579942780, 0.352624717113169637373907769648, 0.547153626330555383001448554766, 0.734210177215410531523210605558, 0.885320946839095768090359771030, 0.977520613561287501891174488626};
-			
-			void find_c_m(int j, int k) 
+			if(j > 7 or k > 7) 
 			{
-				if(j > 7 or k > 7) 
-				{
-					return;
-				}
+				return;
+			}
 
+			else 
+			{
+				if(j == k) 
+				{
+					c_m(k,j) = 1;
+				}
 				else 
 				{
-					if(j == k) 
+					if (j > 0 and k == 0) 
 					{
-						c_m(k,j) = 1;
+						c_m(k,j) = -h[j]*c_m(0,j-1);
 					}
-					else 
+					else
 					{
-						if (j > 0 and k == 0) 
+						if(k<j) 
 						{
-							c_m(k,j) = -h[j]*c_m(0,j-1);
-						}
-						else
-						{
-							if(k<j) 
-							{
-
-								c_m(k,j) = c_m(k-1,j-1) - h[j]*c_m(k,j-1);
-							}
+							c_m(k,j) = c_m(k-1,j-1) - h[j]*c_m(k,j-1);
 						}
 					}
+				}
 
-					if(j < 7) 
-					{
-						find_c_m(j+1,k);
-					}
-					else 
-					{
-						find_c_m(k+1,k+1);
-					}
-
+				if(j < 7) 
+				{
+					find_c_m(j+1,k);
+				}
+				else 
+				{
+					find_c_m(k+1,k+1);
 				}
 
 			}
 
+		}
 
-			void substep(double h, double dt) 
+
+		void substep(double h, double dt) 
+		{
+
+			Eigen::Vector3d pos(0,0,0);
+			Eigen::Vector3d vel(0,0,0);
+
+			for (int i = 0; i < num_particles; i++) 
 			{
 
-				Eigen::Vector3d pos(0,0,0);
-				Eigen::Vector3d vel(0,0,0);
-
-				for (int i = 0; i < num_particles; i++) 
-				{
-
-					for (int j = 0; j < 3; j++) {
-						pos[j] = init_pos(i,j)
+				for (int j = 0; j < 3; j++) {
+					pos[j] = init_pos(i,j)
 							+ ((h*dt) * init_vel(i,j))
 							+ ((h*h*dt*dt/2)*init_acc(i,j)) 
 							+ ((h*h*h*dt*dt/6)*b_values[i](0,j)) 
@@ -260,7 +240,7 @@ namespace ODE_Integrator
 							+ ((h*h*h*h*h*h*h*h*h*dt*dt/72)*b_values[i](6,j))
 							+ ((h*h*h*h*h*h*h*h*h*h*dt*dt/90)*b_values[i](7,j));
 
-						vel[j] = init_vel(i,j)
+					vel[j] = init_vel(i,j)
 							+ ((h*dt)*init_acc(i,j)) 
 							+ ((h*h*dt/2)*b_values[i](0,j)) 
 							+ ((h*h*h*dt/3)*b_values[i](1,j)) 
@@ -270,304 +250,343 @@ namespace ODE_Integrator
 							+ ((h*h*h*h*h*h*h*dt/7)*b_values[i](5,j))
 							+ ((h*h*h*h*h*h*h*h*dt/8)*b_values[i](6,j))
 							+ ((h*h*h*h*h*h*h*h*h*dt/9)*b_values[i](7,j));
-					}
-
-					positions.row(i) = pos;
-					velocities.row(i) = vel;
-
 				}
 
+				positions.row(i) = pos;
+				velocities.row(i) = vel;
+
 			}
+		}
 
-			//Reassigns the b_values based upon the current g_values
-			void convert_g_to_b() 
-			{		
+		//Reassigns the b_values based upon the current g_values
+		void convert_g_to_b() 
+		{		
+			
+			Eigen::Matrix<double,8,3> new_b;
 				
-				Eigen::Matrix<double,8,3> new_b;
-				
-				for(int i = 0; i < num_particles; i ++) {
+			for(int i = 0; i < num_particles; i ++) {
 
-					for(int j = 0; j < 3; j ++) {
+				for(int j = 0; j < 3; j ++) {
 						
-						new_b.col(j) = c_m * g_values[i].col(j);
+					new_b.col(j) = c_m * g_values[i].col(j);
 						
-					}
+				}
 
-					b_values[i] = new_b;
+				b_values[i] = new_b;
+			}
+		}
+
+		//Finds the g_values based on the initial conditions and the current b_values
+		void find_g_values(double dt) {
+
+			Eigen::MatrixXd next_acc = ODE_function(positions, velocities, t);
+
+			//Steps system forward to dt = h[1];
+			substep(h[1], dt);
+
+			//Calculates all g1 values
+			for (int i = 0; i < num_particles; i ++) {
+
+				for (int j = 0; j < 3; j ++) {
+
+					g_values[i](0,j) = ( (next_acc(i,j) - init_acc(i,j)) / h[1] );
+
+				}
+			}
+
+			//Steps system forward to dt = h[2];
+			substep(h[2], dt);
+
+			next_acc = ODE_function(positions, velocities, t);
+
+			//Calculates all g2 values
+			for (int i = 0; i < num_particles; i ++) {
+
+				for (int j = 0; j < 3; j ++) {
+
+					g_values[i](1,j) = ( (next_acc(i,j) - init_acc(i,j) - g_values[i](0,j)*h[2] ) / (h[2]*(h[2]-h[1])) );
+
+				}
+			}
+
+			//Steps system forward to dt = h[3];
+			substep(h[3], dt);
+
+			next_acc = ODE_function(positions, velocities, t);
+
+			//Calculates all g3 values
+			for (int i = 0; i < num_particles; i ++) {
+
+				for (int j = 0; j < 3; j ++) {
+
+					g_values[i](2,j) = ( (next_acc(i,j) - init_acc(i,j) - g_values[i](0,j)*h[3] - g_values[i](1,j)*h[3]*(h[3]-h[1]) ) / (h[3]*(h[3]-h[1])*(h[3]-h[2])) );
+
+				}
+			}
+
+			//Steps system forward to dt = h[4]
+			substep(h[4], dt);
+
+			next_acc = ODE_function(positions, velocities, t);
+
+			//Calculates all g4 values
+			for (int i = 0; i < num_particles; i ++) {
+
+				for (int j = 0; j < 3; j ++) {
+
+					g_values[i](3,j) = ( (next_acc(i,j) - init_acc(i,j) - g_values[i](0,j)*h[4] - g_values[i](1,j)*h[4]*(h[4]-h[1]) - g_values[i](2,j)*h[4]*(h[4]-h[1])*(h[4]-h[2]) ) / (h[4]*(h[4]-h[1])*(h[4]-h[2]) * (h[4]-h[3])) );
+
+				}
+			}
+
+			//Steps system forward to dt = h[5]
+			substep(h[5], dt);
+
+			next_acc = ODE_function(positions, velocities, t);
+
+			//Calculates all g5 values
+			for (int i = 0; i < num_particles; i ++) {
+
+				for (int j = 0; j < 3; j ++) {
+
+					g_values[i](4,j) = ( (next_acc(i,j) - init_acc(i,j) - g_values[i](0,j)*h[5] - g_values[i](1,j)*h[5]*(h[5]-h[1]) - g_values[i](2,j)*h[5]*(h[5]-h[1])*(h[5]-h[2]) - g_values[i](3,j)*h[5]*(h[5]-h[1])*(h[5]-h[2])*(h[5]-h[3]) ) / (h[5]*(h[5]-h[1])*(h[5]-h[2])*(h[5]-h[3])*(h[5]-h[4])) );
+
+				}
+			}
+
+			//Steps system forward to dt = h[6]
+			substep(h[6], dt);
+
+			next_acc = ODE_function(positions, velocities, t);
+
+			//Calculates all g6 values
+			for (int i = 0; i < num_particles; i ++) {
+
+				for (int j = 0; j < 3; j ++) {
+
+					g_values[i](5,j) = ( (next_acc(i,j) - init_acc(i,j) - g_values[i](0,j)*h[6] - g_values[i](1,j)*h[6]*(h[6]-h[1]) - g_values[i](2,j)*h[6]*(h[6]-h[1])*(h[6]-h[2]) - g_values[i](3,j)*h[6]*(h[6]-h[1])*(h[6]-h[2])*(h[6]-h[3]) - g_values[i](4,j)*h[6]*(h[6]-h[1])*(h[6]-h[2])*(h[6]-h[3])*(h[6]-h[4]) ) / (h[6]*(h[6]-h[1])*(h[6]-h[2])*(h[6]-h[3])*(h[6]-h[4])*(h[6]-h[5])) );
+
 				}
 
 			}
 
+			//Steps system forward to dt=h[7]
+			substep(h[7], dt);
 
-			//Finds the g_values based on the initial conditions and the current b_values
-			void find_g_values(double dt) {
+			next_acc = ODE_function(positions, velocities, t);
 
-				Eigen::MatrixXd next_acc = calc_accelerations(positions, velocities, t);
+			//Calculates all g7 values
+			for (int i = 0; i < num_particles; i ++) {
 
-				//Steps system forward to dt = h[1];
-				substep(h[1], dt);
+				for (int j = 0; j < 3; j ++) {
 
-				//Calculates all g1 values
-				for (int i = 0; i < num_particles; i ++) {
-
-					for (int j = 0; j < 3; j ++) {
-
-						g_values[i](0,j) = ( (next_acc(i,j) - init_acc(i,j)) / h[1] );
-
-					}
+					g_values[i](6,j) = ( (next_acc(i,j) - init_acc(i,j) - g_values[i](0,j)*h[7] - g_values[i](1,j)*h[7]*(h[7]-h[1]) - g_values[i](2,j)*h[7]*(h[7]-h[1])*(h[7]-h[2]) - g_values[i](3,j)*h[7]*(h[7]-h[1])*(h[7]-h[2])*(h[7]-h[3]) - g_values[i](4,j)*h[7]*(h[7]-h[1])*(h[7]-h[2])*(h[7]-h[3])*(h[7]-h[4]) - g_values[i](5,j)*h[7]*(h[7]-h[1])*(h[7]-h[2])*(h[7]-h[3])*(h[7]-h[4])*(h[7]-h[5]) ) / (h[7]*(h[7]-h[1])*(h[7]-h[2])*(h[7]-h[3])*(h[7]-h[4])*(h[7]-h[5])*(h[7]-h[6])) );
 
 				}
 
-
-
-				//Steps system forward to dt = h[2];
-				substep(h[2], dt);
-
-				next_acc = calc_accelerations(positions, velocities, t);
-
-				//Calculates all g2 values
-				for (int i = 0; i < num_particles; i ++) {
-
-					for (int j = 0; j < 3; j ++) {
-
-						g_values[i](1,j) = ( (next_acc(i,j) - init_acc(i,j) - g_values[i](0,j)*h[2] ) / (h[2]*(h[2]-h[1])) );
-
-					}
-
-				}
-
-
-
-				//Steps system forward to dt = h[3];
-				substep(h[3], dt);
-
-				next_acc = calc_accelerations(positions, velocities, t);
-
-				//Calculates all g3 values
-				for (int i = 0; i < num_particles; i ++) {
-
-					for (int j = 0; j < 3; j ++) {
-
-						g_values[i](2,j) = ( (next_acc(i,j) - init_acc(i,j) - g_values[i](0,j)*h[3] - g_values[i](1,j)*h[3]*(h[3]-h[1]) ) / (h[3]*(h[3]-h[1])*(h[3]-h[2])) );
-
-					}
-
-				}
-
-
-
-				//Steps system forward to dt = h[4]
-				substep(h[4], dt);
-
-				next_acc = calc_accelerations(positions, velocities, t);
-
-				//Calculates all g4 values
-				for (int i = 0; i < num_particles; i ++) {
-
-					for (int j = 0; j < 3; j ++) {
-
-						g_values[i](3,j) = ( (next_acc(i,j) - init_acc(i,j) - g_values[i](0,j)*h[4] - g_values[i](1,j)*h[4]*(h[4]-h[1]) - g_values[i](2,j)*h[4]*(h[4]-h[1])*(h[4]-h[2]) ) / (h[4]*(h[4]-h[1])*(h[4]-h[2]) * (h[4]-h[3])) );
-
-					}
-
-				}
-
-
-
-				//Steps system forward to dt = h[5]
-				substep(h[5], dt);
-
-				next_acc = calc_accelerations(positions, velocities, t);
-
-				//Calculates all g5 values
-				for (int i = 0; i < num_particles; i ++) {
-
-					for (int j = 0; j < 3; j ++) {
-
-						g_values[i](4,j) = ( (next_acc(i,j) - init_acc(i,j) - g_values[i](0,j)*h[5] - g_values[i](1,j)*h[5]*(h[5]-h[1]) - g_values[i](2,j)*h[5]*(h[5]-h[1])*(h[5]-h[2]) - g_values[i](3,j)*h[5]*(h[5]-h[1])*(h[5]-h[2])*(h[5]-h[3]) ) / (h[5]*(h[5]-h[1])*(h[5]-h[2])*(h[5]-h[3])*(h[5]-h[4])) );
-
-					}
-
-				}
-
-
-
-				//Steps system forward to dt = h[6]
-				substep(h[6], dt);
-
-				next_acc = calc_accelerations(positions, velocities, t);
-
-				//Calculates all g6 values
-				for (int i = 0; i < num_particles; i ++) {
-
-					for (int j = 0; j < 3; j ++) {
-
-						g_values[i](5,j) = ( (next_acc(i,j) - init_acc(i,j) - g_values[i](0,j)*h[6] - g_values[i](1,j)*h[6]*(h[6]-h[1]) - g_values[i](2,j)*h[6]*(h[6]-h[1])*(h[6]-h[2]) - g_values[i](3,j)*h[6]*(h[6]-h[1])*(h[6]-h[2])*(h[6]-h[3]) - g_values[i](4,j)*h[6]*(h[6]-h[1])*(h[6]-h[2])*(h[6]-h[3])*(h[6]-h[4]) ) / (h[6]*(h[6]-h[1])*(h[6]-h[2])*(h[6]-h[3])*(h[6]-h[4])*(h[6]-h[5])) );
-
-					}
-
-				}
-
-
-
-				//Steps system forward to dt=h[7]
-				substep(h[7], dt);
-
-				next_acc = calc_accelerations(positions, velocities, t);
-
-				//Calculates all g7 values
-				for (int i = 0; i < num_particles; i ++) {
-
-					for (int j = 0; j < 3; j ++) {
-
-						g_values[i](6,j) = ( (next_acc(i,j) - init_acc(i,j) - g_values[i](0,j)*h[7] - g_values[i](1,j)*h[7]*(h[7]-h[1]) - g_values[i](2,j)*h[7]*(h[7]-h[1])*(h[7]-h[2]) - g_values[i](3,j)*h[7]*(h[7]-h[1])*(h[7]-h[2])*(h[7]-h[3]) - g_values[i](4,j)*h[7]*(h[7]-h[1])*(h[7]-h[2])*(h[7]-h[3])*(h[7]-h[4]) - g_values[i](5,j)*h[7]*(h[7]-h[1])*(h[7]-h[2])*(h[7]-h[3])*(h[7]-h[4])*(h[7]-h[5]) ) / (h[7]*(h[7]-h[1])*(h[7]-h[2])*(h[7]-h[3])*(h[7]-h[4])*(h[7]-h[5])*(h[7]-h[6])) );
-
-					}
-
-				}
-
-
-
-				//Steps system forward to dt = dt
-				substep(1, dt);
-
-				next_acc = calc_accelerations(positions, velocities, t);
-
-				//Calculates all g8 values
-				for (int i = 0; i < num_particles; i ++) {
-
-					for (int j = 0; j < 3; j ++) {
-
-						g_values[i](7,j) = ( (next_acc(i,j) - init_acc(i,j) - g_values[i](0,j) - g_values[i](1,j)*(1-h[1]) - g_values[i](2,j)*(1-h[1])*(1-h[2]) - g_values[i](3,j)*(1-h[1])*(1-h[2])*(1-h[3]) - g_values[i](4,j)*(1-h[1])*(1-h[2])*(1-h[3])*(1-h[4]) - g_values[i](5,j)*(1-h[1])*(1-h[2])*(1-h[3])*(1-h[4])*(1-h[5]) - g_values[i](6,j)*(1-h[1])*(1-h[2])*(1-h[3])*(1-h[4])*(1-h[5])*(1-h[6]) ) / ((1-h[1])*(1-h[2])*(1-h[3])*(1-h[4])*(1-h[5])*(1-h[6])*(1-h[7])) );
-
-					}
-
-				}
-
-				//Returns system to dt = 0 and converts the g values to b values
-				
-				substep(0, dt);
-				convert_g_to_b();
-				
 			}
 
-			bool initialized = false;
-			void initialize_RK_step(double dt) 
+			//Steps system forward to dt = dt
+			substep(1, dt);
+
+			next_acc = ODE_function(positions, velocities, t);
+
+			//Calculates all g8 values
+			for (int i = 0; i < num_particles; i ++) {
+
+				for (int j = 0; j < 3; j ++) {
+
+					g_values[i](7,j) = ( (next_acc(i,j) - init_acc(i,j) - g_values[i](0,j) - g_values[i](1,j)*(1-h[1]) - g_values[i](2,j)*(1-h[1])*(1-h[2]) - g_values[i](3,j)*(1-h[1])*(1-h[2])*(1-h[3]) - g_values[i](4,j)*(1-h[1])*(1-h[2])*(1-h[3])*(1-h[4]) - g_values[i](5,j)*(1-h[1])*(1-h[2])*(1-h[3])*(1-h[4])*(1-h[5]) - g_values[i](6,j)*(1-h[1])*(1-h[2])*(1-h[3])*(1-h[4])*(1-h[5])*(1-h[6]) ) / ((1-h[1])*(1-h[2])*(1-h[3])*(1-h[4])*(1-h[5])*(1-h[6])*(1-h[7])) );
+
+				}
+
+			}
+
+			//Returns system to dt = 0 and converts the g values to b values
+				
+			substep(0, dt);
+			convert_g_to_b();
+				
+		}
+
+		bool initialized = false;
+		void initialize_RK_step(double dt) 
+		{
+
+			init_pos = positions;
+			init_vel = velocities;
+			init_acc = ODE_function(positions,velocities,t);
+				
+			if (not initialized)
 			{
 
-				init_pos = positions;
-				init_vel = velocities;
-				init_acc = calc_accelerations(positions,velocities,t);
-				
-				if (not initialized)
+				Eigen::Matrix<double,8,3> coeff;
+
+				coeff <<	0, 0, 0, 
+							0, 0, 0, 
+							0, 0, 0, 
+							0, 0, 0, 
+							0, 0, 0, 
+							0, 0, 0, 
+							0, 0, 0, 
+							0, 0, 0;
+
+				for (int i = 0; i < num_particles; i ++)
 				{
-
-					Eigen::Matrix<double,8,3> coeff;
-
-					coeff <<	0, 0, 0, 
-								0, 0, 0, 
-								0, 0, 0, 
-								0, 0, 0, 
-								0, 0, 0, 
-								0, 0, 0, 
-								0, 0, 0, 
-								0, 0, 0;
-
-					for (int i = 0; i < num_particles; i ++)
-					{
-						b_values.push_back(coeff);
-						g_values.push_back(coeff);
-					}
-
-					
-					find_c_m(0,0);
-					find_g_values(dt);
-					initialized = true;
-
+					b_values.push_back(coeff);
+					g_values.push_back(coeff);
 				}
 
+					
+				find_c_m(0,0);
+				initialized = true;
+
 			}
+
+			find_g_values(dt);
 
 		}
 
-
-
 		std::vector<Eigen::Matrix<double,8,3> > old_b_values;
+		
 		int count = 0;
-		void RK_Driver(double dt)
+		double epsilon = 0.28;
+		void RK_Step(double &dt)
 		{
 
-			RungaKutta::initialize_RK_step(dt);
+			if (count == 0)
+			{
+				initialize_RK_step(dt);
+			}
 
-			old_b_values = RungaKutta::b_values;
-
-			RungaKutta::find_g_values(dt);
+			old_b_values = b_values;
+			find_g_values(dt);
 
 			//Determines whether the g_values have converged to machine precision yet
 			double max_del_b6 = 0;
 			double max_y_pp = 0;
 
+
 			for (int i = 0; i < num_particles; i++)
 			{
 				for (int j = 0; j < 3; j ++)
 				{
-					max_del_b6 = std::max( abs(max_del_b6) , abs(old_b_values[i](5,j) - RungaKutta::b_values[i](5,j) ) );
-					max_y_pp = std::max( abs( max_y_pp) , abs(RungaKutta::init_acc(i,j)) );
+					max_del_b6 = std::max( abs(max_del_b6) , abs(old_b_values[i](5,j) - b_values[i](5,j) ) );
+					max_y_pp = std::max( abs( max_y_pp) , abs( init_acc(i,j) ) );
 				}
 			}
 
 			double global_error = max_del_b6 / max_y_pp ;
-
 			if ( global_error <= pow(10,-15) or count > 12 )
 			{
-				std::cout << "Ended Iteration with count = " << count << " and global error = " << global_error << std::endl;
-				RungaKutta::substep(1, dt);
-				count = 0;
+				
+				//Determines if step-size was acceptable
+				double max_b6 = 0;
+				double dt_required = 0;
+				
+				for (int i = 0; i < num_particles; i++)
+				{
+					for (int j = 0; j < 3; j ++)
+					{
+						max_b6 = std::max( abs(max_b6) , abs( b_values[i](5,j) ) );
+						max_y_pp = std::max( abs( max_y_pp) , abs( init_acc(i,j)));
+					}
+				}
+
+				dt_required = dt * std::pow( ((epsilon * max_y_pp) / max_b6) , 0.14285714285);	
+
+				std::cout << "count = " << count << " t = " << t << " dt = " << dt << " and dt req = " << dt_required << std::endl;
+				
+				if (dt < dt_required)
+				{
+					dt = dt_required;
+					count = 0;
+					RK_Step(dt);
+				}
+
+				else
+				{
+					substep(1, dt);
+					dt = dt_required;
+					count = 0;
+				}
 			}
 
 			else
 			{
 				count += 1;
-				RK_Driver(dt);
+				RK_Step(dt);
 			}
-
-		}
-
+		}	
 	}
 
-
-
-	ODE_Integrator::Integrators::ArrayPair Integrate(Eigen::MatrixXd positions, Eigen::MatrixXd velocities, double dt, Eigen::MatrixXd (*input_acc_function)(const Eigen::MatrixXd &positions, const Eigen::MatrixXd &velocities, double t), std::string method)
+	//fun, t_span, y0, method='RK45', t_eval=None, dense_output=False, events=None, vectorized=False, args=None, **options
+	std::vector<ArrayPair> Integrate(Eigen::MatrixXd (*func)(const Eigen::MatrixXd &positions, const Eigen::MatrixXd &velocities, double t), double t_initial, double t_final, const Eigen::MatrixXd &init_positions, const Eigen::MatrixXd &init_velocities, double dt, const Eigen::VectorXd &t_eval = Eigen::VectorXd(), std::string method = "RK")
 	{
 
-		Integrators::num_particles = positions.rows();
+		//Initializes all of the values
+		t = t_initial;
+		positions = init_positions;
+		velocities = init_velocities;
+		std::vector<ArrayPair> data;
+		ODE_function = func;
+		data.push_back( ArrayPair(positions,velocities) );
+		num_particles = positions.rows();
+
+		//To be used if t_eval is provided by user
+		int max_t_eval_index = t_eval.rows();
+		bool use_t_eval = max_t_eval_index;
+		int curr_t_eval_index = 0;
+		double dt_to_t_eval;
 		
-		Integrators::positions = positions;
-		Integrators::velocities = velocities;
+		//Chooses the integration method used
+		void (*integrate_step)(double &dt);
 		
-		calc_accelerations = input_acc_function;
-
-
-		if (method == "lf")
+		if (method == "RK")
 		{
-			ODE_Integrator::Integrators::leap_frog(dt);
+			integrate_step = &RungaKutta::RK_Step;
 		}
 
-		if (method == "at")
-		{
-			ODE_Integrator::Integrators::adaptive_step(dt);
-		}
 
-		if (method == "rk")
+		while (t < t_final)
 		{
-			ODE_Integrator::Integrators::RK_Driver(dt);
-		}
 
-		ODE_Integrator::Integrators::ArrayPair data = ODE_Integrator::Integrators::ArrayPair(Integrators::positions, Integrators::velocities);
+			t += dt;
+
+			//Checks if the current time-step has passed a point provided in t-eval. If it has, the 
+			if (use_t_eval and t >= t_eval[curr_t_eval_index])
+			{
+
+				Eigen::MatrixXd oldpositions = positions;
+				Eigen::MatrixXd oldvelocities = velocities;
+
+				//Steps the system forward to t = t_eval[index]
+				dt_to_t_eval = dt - (t - t_eval[curr_t_eval_index]);
+				integrate_step(dt_to_t_eval);
+				data.push_back( ArrayPair(positions,velocities) );
+				
+				//Resets the system back to old t
+				positions = oldpositions;
+				velocities = oldvelocities;
+
+				curr_t_eval_index += 1;
+				if (curr_t_eval_index >= max_t_eval_index)
+				{
+					use_t_eval = false;
+				}
+			}
+
+			integrate_step(dt);
+
+
+		}
+		
+		data.push_back( ArrayPair(positions,velocities) );
+		
 		return data;
 
 	}
-
-
+	
 }
+
 

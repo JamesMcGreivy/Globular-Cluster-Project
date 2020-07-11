@@ -4,7 +4,7 @@ import csv;
 x = []
 
 
-with open('NewFiles/Output/Data.csv') as csvfile1:
+with open('NewFiles/Output/positions.csv') as csvfile1:
   read_position = csv.reader(csvfile1, delimiter = ',')
 
   for row in read_position:
@@ -22,14 +22,14 @@ ax1 = fig.add_subplot(111, projection='3d')
 
 bound = 6
 i=0
-m = 4
+m = 2
 def animate(i):
   global bound
   ax1.clear()
 
   i = m*i
 
-  for k in range((len(x[i]) - 2)//3):
+  for k in range((len(x[i]) - 1)//3):
     points1 = ax1.scatter(float(x[i][3*k]),float(x[i][(3*k)+1]),float(x[i][(3*k)+2]),color="blue")
   
   ax1.set_xlim(-bound,bound)
