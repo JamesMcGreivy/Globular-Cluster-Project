@@ -11,7 +11,7 @@ namespace ODE_Integrator
 	namespace LeapFrog
 	{
 		
-		void LF_Step(double dt)
+		void LF_Step(double &dt)
 		{
 			positions += (dt/2) * velocities;
 			velocities += dt * ODE_function(positions, velocities, t);
@@ -146,7 +146,7 @@ namespace ODE_Integrator
 			}
 		}
 
-		void Adaptive_Step(double dt = 1)
+		void Adaptive_Step(double &dt)
 		{
 			Eigen::VectorXi already_on_timestep;
 			already_on_timestep.resize(num_particles,1);
@@ -175,42 +175,32 @@ namespace ODE_Integrator
 		Eigen::Matrix<double,8,8> c_m;
 
 		static const double h[9]  = { 0.0, 0.0562625605369221464656521910318, 0.180240691736892364987579942780, 0.352624717113169637373907769648, 0.547153626330555383001448554766, 0.734210177215410531523210605558, 0.885320946839095768090359771030, 0.977520613561287501891174488626};
-			
-		void find_c_m(int j, int k) 
-		{
-			if(j > 7 or k > 7) 
-			{
+		void find_matrix(int j, int k) {
+			if(j > 7 or k > 7) {
 				return;
 			}
 
-			else 
-			{
-				if(j == k) 
-				{
+			else {
+				if(j == k) {
 					c_m(k,j) = 1;
 				}
-				else 
-				{
-					if (j > 0 and k == 0) 
-					{
+				else {
+					if (j > 0 and k == 0) {
 						c_m(k,j) = -h[j]*c_m(0,j-1);
 					}
-					else
-					{
-						if(k<j) 
-						{
+					else{
+						if(k<j) {
+
 							c_m(k,j) = c_m(k-1,j-1) - h[j]*c_m(k,j-1);
 						}
 					}
 				}
 
-				if(j < 7) 
-				{
-					find_c_m(j+1,k);
+				if(j < 7) {
+					find_matrix(j+1,k);
 				}
-				else 
-				{
-					find_c_m(k+1,k+1);
+				else {
+					find_matrix(k+1,k+1);
 				}
 
 			}
@@ -227,7 +217,8 @@ namespace ODE_Integrator
 			for (int i = 0; i < num_particles; i++) 
 			{
 
-				for (int j = 0; j < 3; j++) {
+				for (int j = 0; j < 3; j++) 
+				{
 					pos[j] = init_pos(i,j)
 							+ ((h*dt) * init_vel(i,j))
 							+ ((h*h*dt*dt/2)*init_acc(i,j)) 
@@ -278,12 +269,12 @@ namespace ODE_Integrator
 
 		//Finds the g_values based on the initial conditions and the current b_values
 		void find_g_values(double dt) {
-
-			Eigen::MatrixXd next_acc = ODE_function(positions, velocities, t);
+			
+			Eigen::MatrixXd next_acc;
 
 			//Steps system forward to dt = h[1];
 			substep(h[1], dt);
-
+			next_acc = ODE_function(positions, velocities, t);
 			//Calculates all g1 values
 			for (int i = 0; i < num_particles; i ++) {
 
@@ -403,7 +394,6 @@ namespace ODE_Integrator
 			}
 
 			//Returns system to dt = 0 and converts the g values to b values
-				
 			substep(0, dt);
 			convert_g_to_b();
 				
@@ -437,8 +427,7 @@ namespace ODE_Integrator
 					g_values.push_back(coeff);
 				}
 
-					
-				find_c_m(0,0);
+				find_matrix(0,0);
 				initialized = true;
 
 			}
@@ -450,10 +439,9 @@ namespace ODE_Integrator
 		std::vector<Eigen::Matrix<double,8,3> > old_b_values;
 		
 		int count = 0;
-		double epsilon = 0.28;
+		double epsilon = 0.028;
 		void RK_Step(double &dt)
 		{
-
 			if (count == 0)
 			{
 				initialize_RK_step(dt);
@@ -466,7 +454,6 @@ namespace ODE_Integrator
 			double max_del_b6 = 0;
 			double max_y_pp = 0;
 
-
 			for (int i = 0; i < num_particles; i++)
 			{
 				for (int j = 0; j < 3; j ++)
@@ -477,38 +464,37 @@ namespace ODE_Integrator
 			}
 
 			double global_error = max_del_b6 / max_y_pp ;
-			if ( global_error <= pow(10,-15) or count > 12 )
+
+			if ( global_error <= pow(10,-11) or count > 11 )
 			{
-				
-				//Determines if step-size was acceptable
+
+				//Calculates if the current step-size is acceptable
 				double max_b6 = 0;
-				double dt_required = 0;
-				
 				for (int i = 0; i < num_particles; i++)
 				{
 					for (int j = 0; j < 3; j ++)
 					{
-						max_b6 = std::max( abs(max_b6) , abs( b_values[i](5,j) ) );
-						max_y_pp = std::max( abs( max_y_pp) , abs( init_acc(i,j)));
+						max_b6 = std::max( abs(max_b6) , abs(b_values[i](5,j) ) );
 					}
 				}
+				max_b6 = max_b6 / max_y_pp;
 
-				dt_required = dt * std::pow( ((epsilon * max_y_pp) / max_b6) , 0.14285714285);	
+				double dt_req = dt * pow( (epsilon / max_b6) , 0.14285714285 );
 
-				std::cout << "count = " << count << " t = " << t << " dt = " << dt << " and dt req = " << dt_required << std::endl;
-				
-				if (dt < dt_required)
+				if (dt > dt_req)
 				{
-					dt = dt_required;
 					count = 0;
-					RK_Step(dt);
+					RK_Step(dt_req);
 				}
-
+				
 				else
 				{
 					substep(1, dt);
-					dt = dt_required;
 					count = 0;
+					t += dt;
+					std::cout << "integrated with dt = " << dt << " and dt_req = " << dt_req << std::endl;
+					dt = dt_req;
+					
 				}
 			}
 
@@ -530,13 +516,12 @@ namespace ODE_Integrator
 		velocities = init_velocities;
 		std::vector<ArrayPair> data;
 		ODE_function = func;
-		data.push_back( ArrayPair(positions,velocities) );
 		num_particles = positions.rows();
 
 		//To be used if t_eval is provided by user
 		int max_t_eval_index = t_eval.rows();
 		bool use_t_eval = max_t_eval_index;
-		int curr_t_eval_index = 0;
+		int t_eval_index = 0;
 		double dt_to_t_eval;
 		
 		//Chooses the integration method used
@@ -547,41 +532,57 @@ namespace ODE_Integrator
 			integrate_step = &RungaKutta::RK_Step;
 		}
 
+		if (method == "LF")
+		{
+			integrate_step = &LeapFrog::LF_Step;
+		}
+
+		if (method == "AT")
+		{
+			integrate_step = &AdaptiveStep::Adaptive_Step;
+		}
 
 		while (t < t_final)
 		{
-
-			t += dt;
-
-			//Checks if the current time-step has passed a point provided in t-eval. If it has, the 
-			if (use_t_eval and t >= t_eval[curr_t_eval_index])
-			{
-
-				Eigen::MatrixXd oldpositions = positions;
-				Eigen::MatrixXd oldvelocities = velocities;
-
-				//Steps the system forward to t = t_eval[index]
-				dt_to_t_eval = dt - (t - t_eval[curr_t_eval_index]);
-				integrate_step(dt_to_t_eval);
-				data.push_back( ArrayPair(positions,velocities) );
+			if (use_t_eval)
+			{	
 				
-				//Resets the system back to old t
-				positions = oldpositions;
-				velocities = oldvelocities;
+				Eigen::MatrixXd old_pos = positions;
+				Eigen::MatrixXd old_vel = velocities;
+				double old_t = t;
 
-				curr_t_eval_index += 1;
-				if (curr_t_eval_index >= max_t_eval_index)
+				//Tries to integrate forward by dt
+				integrate_step(dt);
+
+
+				//If it passes a t_eval member it resets and integrates up to t_eval
+				if (t > t_eval[t_eval_index])
 				{
-					use_t_eval = false;
+
+					positions = old_pos;
+					velocities = old_vel;
+					t = old_t;
+
+					while (t < t_eval[t_eval_index])
+					{	
+						dt = t_eval[t_eval_index] - t;
+						integrate_step(dt);
+						assert( t <= t_eval[t_eval_index]);
+					}
+
+					assert(t = t_eval[t_eval_index]);
+					data.push_back( ArrayPair(positions,velocities,t) );
+					std::cout << t << std::endl;
+					t_eval_index += 1;
+
 				}
+
 			}
-
-			integrate_step(dt);
-
-
+			if (t_eval_index >= max_t_eval_index)
+			{
+				use_t_eval = false;
+			}
 		}
-		
-		data.push_back( ArrayPair(positions,velocities) );
 		
 		return data;
 

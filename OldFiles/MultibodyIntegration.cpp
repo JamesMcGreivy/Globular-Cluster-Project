@@ -940,7 +940,7 @@ void find_g_values(System &sys, double dt) {
 	}
 
 	//Returns system to dt = 0 and converts the g values to b values
-	
+	std::cout << g_values[0][0] << std::endl << std::endl;
 	substepRK(sys,0,dt);
 	convert_g_to_b(sys);
 	
@@ -969,7 +969,6 @@ void RK_Driver(System &sys, bool use_adaptive_stepsize) {
 	int size = sys.size();
 
 	old_b_values = b_values;
-	
 	find_g_values(sys,dt);
 
 	//Determines whether the g_values have converged to machine precision yet
@@ -990,8 +989,7 @@ void RK_Driver(System &sys, bool use_adaptive_stepsize) {
 
 	double global_error = max_del_b_6 / max_y_pp ;
 	//Determines if the predictor corrector loop has converged or not
-	if ( ( global_error > pow(10,-16) ) and (count_ < 12)) {
-
+	if ( ( global_error > pow(10,-16) ) and (count_ < 4)) {
 
 		count_ ++;
 		RK_Driver(sys, use_adaptive_stepsize);
@@ -1002,7 +1000,7 @@ void RK_Driver(System &sys, bool use_adaptive_stepsize) {
 
 		if (use_adaptive_stepsize) {
 			double dt_req = dt * pow ( (epsilon / (max_b_6 / max_y_pp)) , 0.14285714);
-			cout << dt_req << endl;
+
 			if (dt > dt_req) {
 				dt = dt_req;
 				RK_Driver(sys, use_adaptive_stepsize);
@@ -1020,7 +1018,7 @@ void RK_Driver(System &sys, bool use_adaptive_stepsize) {
 		}
 
 
-		cout << global_error << endl;
+		//cout << global_error << endl;
 		t += dt;
 		substepRK(sys, 1, dt);
 		first_step = true;
@@ -1162,8 +1160,8 @@ int main() {
 */
 	System sys;
 
-	Particle p1(-3,0,0,0,-0.2,0,1);
-	Particle p3(3,0,0,0,0.2,0,1);
+	Particle p1(-3,0,0,0,0.3,0,1);
+	Particle p3(3,0,0,0,-0.3,0,1);
 
 	sys.add_particle(p1);
 	sys.add_particle(p3);
@@ -1172,8 +1170,8 @@ int main() {
 	auto start1 = chrono::steady_clock::now();
 	
 	//output_energy(sys, 2, "OldFiles/Data/Output/Energy", 0.5, "LF1");
-	output_position(sys, 5, "OldFiles/Data/Output/Data", 0.5, "RK");
-	cout << "Force Evals with RK: " << force_eval_counter << endl;
+	output_position(sys, 100, "Data/Output/Pos", 0.5, "RK");
+	//cout << "Force Evals with RK: " << force_eval_counter << endl;
 	
 	auto end1 = chrono::steady_clock::now();
 
@@ -1183,12 +1181,11 @@ int main() {
 	force_eval_counter = 0;
 	//output_position(sys, 250, "Data/Output/Data2", 0.5, "RK_AT");
 	//output_energy(sys, 250, "Data/Output/Energy2", 0.5, "RK_AT");
-	cout << "Force Evals with LF: " << force_eval_counter << endl;
+	//cout << "Force Evals with LF: " << force_eval_counter << endl;
 	
 	auto end2 = chrono::steady_clock::now();
 
 	cout << "Runga Kutta: " << chrono::duration <double, milli> (end1-start1).count() << " ms" << endl;
 	cout << "LF: " << chrono::duration <double, milli> (end2-start2).count() << " ms" << endl;
-	cout << c_m << endl;
 	return 0;
 }

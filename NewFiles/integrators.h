@@ -28,11 +28,20 @@ namespace ODE_Integrator
 			
 		Eigen::MatrixXd array1;
 		Eigen::MatrixXd array2;
+		double t;
 
 		ArrayPair(Eigen::MatrixXd &arr1, Eigen::MatrixXd &arr2) 
 		{
 			array1 = arr1;
 			array2 = arr2;
+			t = -1000;
+		}
+
+		ArrayPair(Eigen::MatrixXd &arr1, Eigen::MatrixXd &arr2, double t_) 
+		{
+			array1 = arr1;
+			array2 = arr2;
+			t = t_;
 		}
 			
 

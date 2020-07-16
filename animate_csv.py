@@ -22,7 +22,7 @@ ax1 = fig.add_subplot(111, projection='3d')
 
 bound = 6
 i=0
-m = 2
+m = 1
 def animate(i):
   global bound
   ax1.clear()
