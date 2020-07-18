@@ -20,7 +20,7 @@ from matplotlib import animation, cm, pyplot as plt
 fig = plt.figure()
 ax1 = fig.add_subplot(111, projection='3d')
 
-bound = 6
+bound = 25
 i=0
 m = 1
 def animate(i):
@@ -30,7 +30,7 @@ def animate(i):
   i = m*i
 
   for k in range((len(x[i]) - 1)//3):
-    points1 = ax1.scatter(float(x[i][3*k]),float(x[i][(3*k)+1]),float(x[i][(3*k)+2]),color="blue")
+    points1 = ax1.scatter(float(x[i][3*k]),float(x[i][(3*k)+1]),float(x[i][(3*k)+2]),color="blue",s=1.2)
   
   ax1.set_xlim(-bound,bound)
   ax1.set_ylim(-bound,bound)

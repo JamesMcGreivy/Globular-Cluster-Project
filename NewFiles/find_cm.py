@@ -10,15 +10,12 @@ def find_coeff(j,k):
 	if (j < 0 or k < 0 or j > 7 or k > 7):
 		print("Error")
 		return
-	
-	elif (j < k):
-		x[k][j] = 0
 
 	elif (j == k):
 		x[k][j] = 1
 
-	elif (k == 1 and j > 1):
-		x[k][j] = -h[j] * x[1,j-1]
+	elif (k == 0 and j > 0):
+		x[k][j] = -h[j] * x[0,j-1]
 
 	elif (k < j):
 		x[k][j] = x[k-1,j-1] - h[j] * x[k, j-1]
@@ -28,7 +25,7 @@ def find_coeff(j,k):
 		return
 
 for k in range(0,8):
-	for j in range(0,8):
+	for j in range(k,8):
 		find_coeff(j,k)
 
 
@@ -36,6 +33,17 @@ for k in range(0,8):
 for row in x:
 	string = ""
 	for elem in row:
-		string = string + (str(elem)+"00000000000000000")[:15] + "  "
+		string = string + (str(elem)+"000000000000000000000000000000000000000000000000000")[:22] + "  "
 	print(string)
+
+for k in range(0,8):
+	for j in range(k,8):
+		if k == j:
+			assert(x[k][j] == 1)
+
+		elif k == 0 and j > 0:
+			assert(x[k][j] == -h[j]*x[k][j-1])
+
+		elif k < j:
+			assert(x[k][j] == x[k-1][j-1] - h[j]*x[k][j-1] )
 

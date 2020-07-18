@@ -22,7 +22,7 @@ Eigen::VectorXd calc_gravity(int index_of_1, const Eigen::VectorXd pos1, const E
 
 	distance = pow(distance, 0.5); 
 
-	if (distance < 0.05)
+	if (distance < 0.8)
 	{
 		return 0 * r;
 	}
@@ -68,23 +68,25 @@ Eigen::MatrixXd gravity(const Eigen::MatrixXd &positions, const Eigen::MatrixXd 
 int main()
 {
 
-	Eigen::Matrix<double,2,3> positions;
-	Eigen::Matrix<double,2,3> velocities;
+	Eigen::Matrix<double,3,3> positions;
+	Eigen::Matrix<double,3,3> velocities;
 
-	positions <<	-3,0,0,
-					3,0,0;
-
-
-	velocities <<	0,0.3,0,
-					0,-.3,0;
+	positions <<	-20,0,0,
+					15,0,0,
+					20,0,0;
 
 
-	masses = Eigen::Matrix<double,2,1>();
-	masses << 1, 1;
+	velocities <<	0,-1.5,0,
+					0,-4,0,
+					0,1.5,0;
+
+
+	masses = Eigen::Matrix<double,3,1>();
+	masses << 200, 1, 200;
 
 	double num_particles = positions.rows();
-	double t_final = 120;
-	double dt = 20;
+	double t_final = 100;
+	double dt = 0.5;
 
 
 	//Creates t_eval with evaluations at each time-step from t_initial to t_final
