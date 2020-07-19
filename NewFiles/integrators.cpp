@@ -8,22 +8,59 @@
 namespace ODE_Integrator
 {
 
-	namespace LeapFrog
+	class Integrator
 	{
-		
-		void LF_Step(double &dt)
+	public:
+		double t = 0;
+		double dt;
+		int num_particles;
+		Eigen::MatrixXd positions;
+		Eigen::MatrixXd velocities;
+		Eigen::MatrixXd (*ODE_function)(const Eigen::MatrixXd &positions, const Eigen::MatrixXd &velocities, double t);
+
+		Integrator(const Eigen::MatrixXd &init_pos, const Eigen::MatrixXd &init_vel, double init_t, double init_dt, Eigen::MatrixXd (*y_pp_function)(const Eigen::MatrixXd &pos, const Eigen::MatrixXd &vel, double t))
+		{
+			positions = init_pos;
+			velocities = init_vel;
+			num_particles = positions.rows();
+			ODE_function = y_pp_function;
+			t = init_t;
+			dt = init_dt;
+		}
+
+		virtual void step() {std::cout << "ERROR" << std::endl; t += dt;}
+
+
+	};
+
+
+
+	class LeapFrogIntegrator : public Integrator
+	{
+	public:
+		LeapFrogIntegrator(const Eigen::MatrixXd &init_pos, const Eigen::MatrixXd &init_vel, double init_t, double init_dt, Eigen::MatrixXd (*y_pp_function)(const Eigen::MatrixXd &pos, const Eigen::MatrixXd &vel, double t))
+			:Integrator(init_pos, init_vel, init_t, init_dt, y_pp_function) { }
+
+		void step()
 		{
 			positions += (dt/2) * velocities;
 			velocities += dt * ODE_function(positions, velocities, t);
 			positions += (dt/2) * velocities;
 			t += dt;
 		}
+	};
 
-	}
 
-	namespace AdaptiveStep
+
+
+	class AdaptiveLeapFrogIntegrator : public Integrator
 	{
 
+	public:
+		AdaptiveLeapFrogIntegrator(const Eigen::MatrixXd &init_pos, const Eigen::MatrixXd &init_vel, double init_t, double init_dt, Eigen::MatrixXd (*y_pp_function)(const Eigen::MatrixXd &pos, const Eigen::MatrixXd &vel, double t))
+			:Integrator(init_pos, init_vel, init_t, init_dt, y_pp_function) { }
+
+	private:
 		double dt_min;
 	
 		void kick(double dt, Eigen::VectorXi &to_be_kicked)
@@ -124,8 +161,6 @@ namespace ODE_Integrator
 			drift(dt/2);
 
 			Eigen::VectorXi on_this_timestep = select(dt, already_on_timestep);
-
-			std::cout << "dt: " << dt << " dt_min: " << dt_min << std::endl;
  				
  			if (dt <= dt_min)
 			{
@@ -147,8 +182,11 @@ namespace ODE_Integrator
 			}
 		}
 
-		void Adaptive_Step(double &dt)
+
+	public:
+		void step()
 		{
+
 			Eigen::VectorXi already_on_timestep;
 			already_on_timestep.resize(num_particles,1);
 
@@ -157,28 +195,35 @@ namespace ODE_Integrator
 				already_on_timestep[i] = 0;		
 			}
 
-			AdaptiveStep::adaptive_step_recurse(dt,already_on_timestep);
+			adaptive_step_recurse(dt,already_on_timestep);
 			t += dt;
 
 		}
-	}
+
+	};
 
 
-	namespace RungaKutta
+	class RungaKuttaIntegrator : public Integrator
 	{
-
+	private:
 		std::vector<Eigen::Matrix<double,8,3> > b_values;
 		std::vector<Eigen::Matrix<double,8,3> > g_values;
-			
 		Eigen::MatrixXd init_pos;
 		Eigen::MatrixXd init_vel;
 		Eigen::MatrixXd init_acc;
-			
+
+		std::vector<Eigen::Matrix<double,8,3> > old_b_values;
+		int count = 0;
+		double epsilon = 0.028;
+		double previous_error = 0;
+		
 		Eigen::Matrix<double,8,8> c_m;
+		const double h[9] = { 0.0, 0.0562625605369221464656521910318, 0.180240691736892364987579942780, 0.352624717113169637373907769648, 0.547153626330555383001448554766, 0.734210177215410531523210605558, 0.885320946839095768090359771030, 0.977520613561287501891174488626};
 
-		static const double h[9]  = { 0.0, 0.0562625605369221464656521910318, 0.180240691736892364987579942780, 0.352624717113169637373907769648, 0.547153626330555383001448554766, 0.734210177215410531523210605558, 0.885320946839095768090359771030, 0.977520613561287501891174488626};
-		void get_c_m() {
-
+	public:
+		RungaKuttaIntegrator(const Eigen::MatrixXd &init_pos, const Eigen::MatrixXd &init_vel, double init_t, double init_dt, Eigen::MatrixXd (*y_pp_function)(const Eigen::MatrixXd &pos, const Eigen::MatrixXd &vel, double t))
+		:Integrator(init_pos, init_vel, init_t, init_dt, y_pp_function) 
+		{ 
 			c_m <<	1.00000000000000000000, -0.0562625605369221500, 0.01014080283006363000, -0.0035758977292516170, 0.00195656540994722100, -0.0014365302363708915, 0.00127179030902686780, -0.0012432012432012432, 
 					0.00000000000000000000, 1.00000000000000000000, -0.2365032522738145200, 0.09353769525946207000, -0.0547553868890686900, 0.04215852772126870600, -0.0387603579159067700, 0.03916083916083916000, 
 					0.00000000000000000000, 0.00000000000000000000, 1.00000000000000000000, -0.5891279693869842000, 0.41588120008230690000, -0.3600995965020568000, 0.36096224345284600000, -0.3916083916083916000, 
@@ -187,10 +232,9 @@ namespace ODE_Integrator
 					0.00000000000000000000, 0.00000000000000000000, 0.00000000000000000000, 0.00000000000000000000, 0.00000000000000000000, 1.00000000000000000000, -2.7558127197720457000, 5.60000000000000000000, 
 					0.00000000000000000000, 0.00000000000000000000, 0.00000000000000000000, 0.00000000000000000000, 0.00000000000000000000, 0.00000000000000000000, 1.00000000000000000000, -3.7333333333333334000, 
 					0.00000000000000000000, 0.00000000000000000000, 0.00000000000000000000, 0.00000000000000000000, 0.00000000000000000000, 0.00000000000000000000, 0.00000000000000000000, 1.00000000000000000000;
-
 		}
 
-
+	private:
 		void substep(double h, double dt) 
 		{
 
@@ -203,27 +247,27 @@ namespace ODE_Integrator
 				for (int j = 0; j < 3; j++) 
 				{
 					pos[j] = init_pos(i,j)
-							+ ((h*dt) * init_vel(i,j))
-							+ ((h*h*dt*dt/2)*init_acc(i,j)) 
-							+ ((h*h*h*dt*dt/6)*b_values[i](0,j)) 
-							+ ((h*h*h*h*dt*dt/12)*b_values[i](1,j)) 
-							+ ((h*h*h*h*h*dt*dt/20)*b_values[i](2,j))
-							+ ((h*h*h*h*h*h*dt*dt/30)*b_values[i](3,j))
-							+ ((h*h*h*h*h*h*h*dt*dt/42)*b_values[i](4,j))
-							+ ((h*h*h*h*h*h*h*h*dt*dt/56)*b_values[i](5,j))
-							+ ((h*h*h*h*h*h*h*h*h*dt*dt/72)*b_values[i](6,j))
-							+ ((h*h*h*h*h*h*h*h*h*h*dt*dt/90)*b_values[i](7,j));
+						+ ((h*dt) * init_vel(i,j))
+						+ (h*h*dt*dt/2)		*	(init_acc(i,j)
+						+ (h/3)				*	(b_values[i](0,j) 
+						+ (h/2)				*	(b_values[i](1,j) 
+						+ (3*h/5)			*	(b_values[i](2,j)
+						+ (4*h/6)			*	(b_values[i](3,j)
+						+ (5*h/7)			*	(b_values[i](4,j)
+						+ (6*h/8)			*	(b_values[i](5,j)
+						+ (7*h/9)			*	(b_values[i](6,j)
+						+ (8*h/10)			*	(b_values[i](7,j))))))))));
 
 					vel[j] = init_vel(i,j)
-							+ ((h*dt)*init_acc(i,j)) 
-							+ ((h*h*dt/2)*b_values[i](0,j)) 
-							+ ((h*h*h*dt/3)*b_values[i](1,j)) 
-							+ ((h*h*h*h*dt/4)*b_values[i](2,j))
-							+ ((h*h*h*h*h*dt/5)*b_values[i](3,j))
-							+ ((h*h*h*h*h*h*dt/6)*b_values[i](4,j))
-							+ ((h*h*h*h*h*h*h*dt/7)*b_values[i](5,j))
-							+ ((h*h*h*h*h*h*h*h*dt/8)*b_values[i](6,j))
-							+ ((h*h*h*h*h*h*h*h*h*dt/9)*b_values[i](7,j));
+						+ (h*dt)	*	(init_acc(i,j)
+						+ (h/2)		*	(b_values[i](0,j) 
+						+ (2*h/3)	*	(b_values[i](1,j) 
+						+ (3*h/4)	*	(b_values[i](2,j)
+						+ (4*h/5)	*	(b_values[i](3,j)
+						+ (5*h/6)	*	(b_values[i](4,j)
+						+ (6*h/7)	*	(b_values[i](5,j)
+						+ (7*h/8)	*	(b_values[i](6,j)
+						+ (8*h/9)	*	(b_values[i](7,j))))))))));
 				}
 
 				positions.row(i) = pos;
@@ -238,15 +282,18 @@ namespace ODE_Integrator
 			
 			Eigen::Matrix<double,8,3> new_b;
 				
-			for(int i = 0; i < num_particles; i ++) {
+			for(int i = 0; i < num_particles; i ++) 
+			{
 
-				for(int j = 0; j < 3; j ++) {
+				for(int j = 0; j < 3; j ++) 
+				{
 						
 					new_b.col(j) = c_m * g_values[i].col(j);
 						
 				}
 
 				b_values[i] = new_b;
+			
 			}
 		}
 
@@ -257,7 +304,9 @@ namespace ODE_Integrator
 
 			//Steps system forward to dt = h[1];
 			substep(h[1], dt);
+			
 			next_acc = ODE_function(positions, velocities, t);
+			
 			//Calculates all g1 values
 			for (int i = 0; i < num_particles; i ++) {
 
@@ -410,7 +459,6 @@ namespace ODE_Integrator
 					g_values.push_back(coeff);
 				}
 
-				get_c_m();
 				initialized = true;
 
 			}
@@ -419,13 +467,10 @@ namespace ODE_Integrator
 
 		}
 
-		std::vector<Eigen::Matrix<double,8,3> > old_b_values;
-		
-		int count = 0;
-		double epsilon = 0.028;
-		double previous_error = 0;
-		void RK_Step(double &dt)
+	public:
+		void step()
 		{
+
 			if (count == 0)
 			{
 				initialize_RK_step(dt);
@@ -447,10 +492,9 @@ namespace ODE_Integrator
 				}
 			}
 
-			double global_error = max_del_b8 / max_y_pp ;
+			double global_error = max_del_b8 / max_y_pp;
 
-
-			if ( global_error <= pow(10,-16) or (count > 2 and previous_error <= global_error) or count >= 12 )
+			if ( global_error <= 1e-12 or (count > 12))// and previous_error <= global_error) or count >= 12 )
 			{
 
 				//Calculates if the current step-size is acceptable
@@ -465,7 +509,7 @@ namespace ODE_Integrator
 				max_b8 = max_b8 / max_y_pp;
 
 				double dt_req = dt * pow( ( (epsilon * max_y_pp) / max_b8) , 0.14285714285 );
-				if (not isnormal(dt_req) or global_error == 0)
+				if (not isnormal(dt_req))
 				{
 					dt_req = 1.5*dt;
 				}
@@ -473,13 +517,14 @@ namespace ODE_Integrator
 				if (dt > dt_req)
 				{
 					count = 0;
-					RK_Step(dt_req);
+					dt = dt_req;
+					step();
 				}
 				
 				else
 				{
 					substep(1, dt);
-					std::cout << "converged with count = " << count << " and error = " << global_error << std::endl; 
+					std::cout << "ended iteration with count = " << count << " and error = " << global_error << std::endl; 
 					std::cout << "dt = " << dt << " and dt_Req = " << dt_req << std::endl;
 					count = 0;
 					t += dt;
@@ -492,74 +537,78 @@ namespace ODE_Integrator
 			{
 				count += 1;
 				previous_error = global_error;
-				RK_Step(dt);
+				step();
 			}
-		}	
-	}
+		}
+
+	};	
 
 	//fun, t_span, y0, method='RK45', t_eval=None, dense_output=False, events=None, vectorized=False, args=None, **options
-	std::vector<ArrayPair> Integrate(Eigen::MatrixXd (*func)(const Eigen::MatrixXd &positions, const Eigen::MatrixXd &velocities, double t), double t_initial, double t_final, const Eigen::MatrixXd &init_positions, const Eigen::MatrixXd &init_velocities, double dt, const Eigen::VectorXd &t_eval = Eigen::VectorXd(), std::string method = "RK")
+	std::vector<Data> Integrate(Eigen::MatrixXd (*y_pp_function)(const Eigen::MatrixXd &positions, const Eigen::MatrixXd &velocities, double t), double t_initial, double t_final, const Eigen::MatrixXd &init_positions, const Eigen::MatrixXd &init_velocities, double dt, const Eigen::VectorXd &t_eval = Eigen::VectorXd(), std::string method = "RK")
 	{
 
-		//Initializes all of the values
-		t = t_initial;
-		positions = init_positions;
-		velocities = init_velocities;
-		std::vector<ArrayPair> data;
-		ODE_function = func;
-		num_particles = positions.rows();
+		std::vector<Data> return_data;
+		Integrator *integrator;
 
 		//To be used if t_eval is provided by user
 		int max_t_eval_index = t_eval.rows();
 		bool use_t_eval = max_t_eval_index;
 		int t_eval_index = 0;
 		double dt_to_t_eval;
+
+
 		
 		//Chooses the integration method used
-		void (*integrate_step)(double &dt);
-		
-		if (method == "RK")
-		{
-			integrate_step = &RungaKutta::RK_Step;
-		}
+		LeapFrogIntegrator lf = LeapFrogIntegrator(init_positions, init_velocities, t_initial, dt, y_pp_function);
+		AdaptiveLeapFrogIntegrator at = AdaptiveLeapFrogIntegrator(init_positions, init_velocities, t_initial, dt, y_pp_function);
+		RungaKuttaIntegrator rk = RungaKuttaIntegrator(init_positions, init_velocities, t_initial, dt, y_pp_function);
 
 		if (method == "LF")
 		{
-			integrate_step = &LeapFrog::LF_Step;
+			integrator = &lf;
 		}
-
 		if (method == "AT")
 		{
-			integrate_step = &AdaptiveStep::Adaptive_Step;
+			integrator = &at;
+		}
+		if (method == "RK")
+		{	
+			integrator = &rk;
 		}
 
-		while (t < t_final)
+		return_data.push_back( Data(integrator->positions, integrator->velocities, integrator->t) );
+
+		while (integrator->t < t_final)
 		{
-			if (use_t_eval and t + dt > t_eval[t_eval_index])
-			{	
-				dt = t_eval[t_eval_index] - t;
-			}
-			if (t + dt > t_final)
+
+			if (use_t_eval and integrator->t + integrator->dt > t_eval[t_eval_index])
 			{
-				dt = t_final - t;
+				integrator->dt = (t_eval[t_eval_index] - integrator->t);
+			}
+			if (integrator->t + integrator->dt > t_final)
+			{
+				integrator->dt = (t_final - integrator->t);
 			}
 
-			integrate_step(dt);
-			std::cout << t << std::endl;
+			integrator->step();
 
-			if (t == t_eval[t_eval_index])
+			if (integrator->t == t_eval[t_eval_index])
 			{
-				data.push_back( ArrayPair(positions, velocities, t));
+				return_data.push_back( Data(integrator->positions, integrator->velocities, integrator->t) );
 				t_eval_index += 1;
 			}
-			if(t_eval_index == max_t_eval_index)
+			if (integrator->t == t_final)
+			{
+				return_data.push_back( Data(integrator->positions, integrator->velocities, integrator->t) );	
+			}
+			
+			if (t_eval_index == max_t_eval_index)
 			{
 				use_t_eval = false;
 			}
-
-		}
 		
-		return data;
+		}
+		return return_data;
 
 	}
 	

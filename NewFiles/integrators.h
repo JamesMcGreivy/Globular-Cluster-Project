@@ -12,40 +12,23 @@ namespace ODE_Integrator
 		return std::sqrt( vector[0]*vector[0] + vector[1]*vector[1] + vector[2]*vector[2] );
 	}
 		
-	
-	//The main variables that are Set at the start of each integration
-	Eigen::MatrixXd positions;
-	Eigen::MatrixXd velocities;
-	double t;
-	double dt;
-	int num_particles;
-	Eigen::MatrixXd (*ODE_function)(const Eigen::MatrixXd &positions, const Eigen::MatrixXd &velocities, double t);
-	
-		
 	//Used to return the position and velocity arrays from the main integrator function
-	struct ArrayPair 
+	struct Data 
 	{
 			
-		Eigen::MatrixXd array1;
-		Eigen::MatrixXd array2;
-		double t;
+		Eigen::MatrixXd position;
+		Eigen::MatrixXd velocity;
+		double time;
 
-		ArrayPair(Eigen::MatrixXd &arr1, Eigen::MatrixXd &arr2) 
+		Data(Eigen::MatrixXd &pos, Eigen::MatrixXd &vel, double t) 
 		{
-			array1 = arr1;
-			array2 = arr2;
-			t = -1000;
-		}
-
-		ArrayPair(Eigen::MatrixXd &arr1, Eigen::MatrixXd &arr2, double t_) 
-		{
-			array1 = arr1;
-			array2 = arr2;
-			t = t_;
+			position = pos;
+			velocity = vel;
+			time = t;
 		}
 			
 
-		ArrayPair()
+		Data()
 		{
 
 		}
@@ -55,18 +38,16 @@ namespace ODE_Integrator
 			assert(i == 0 or i == 1);
 			if (i == 0)
 			{
-				return array1;
+				return position;
 			}
 			if (i == 1)
 			{
-				return array2;
+				return velocity;
 			}
 		}
 		
 	};	
-
-	void leap_frog(Eigen::MatrixXd &positions, Eigen::MatrixXd &velocities, double dt);
-	ODE_Integrator::ArrayPair Integrate(Eigen::MatrixXd positions, Eigen::MatrixXd velocities, double dt, Eigen::MatrixXd (*calc_acc)(const Eigen::MatrixXd &positions, const Eigen::MatrixXd &velocities, double t), std::string method);	
+	
 
 }
 
