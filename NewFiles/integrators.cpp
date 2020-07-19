@@ -493,8 +493,7 @@ namespace ODE_Integrator
 			}
 
 			double global_error = max_del_b8 / max_y_pp;
-
-			if ( global_error <= 1e-12 or (count > 12))// and previous_error <= global_error) or count >= 12 )
+			if ( global_error <= 1e-14 or (count > 12))// and previous_error <= global_error) or count >= 12 )
 			{
 
 				//Calculates if the current step-size is acceptable
