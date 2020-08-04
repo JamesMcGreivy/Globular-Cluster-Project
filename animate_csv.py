@@ -18,9 +18,9 @@ from matplotlib import animation, cm, pyplot as plt
 
 
 fig = plt.figure()
-ax1 = fig.add_subplot(111, projection='3d')
+ax1 = fig.add_subplot(111)#, projection='3d')
 
-bound = 25
+bound = 10
 i=0
 m = 1
 def animate(i):
@@ -30,11 +30,13 @@ def animate(i):
   i = m*i
 
   for k in range((len(x[i]) - 1)//3):
-    points1 = ax1.scatter(float(x[i][3*k]),float(x[i][(3*k)+1]),float(x[i][(3*k)+2]),color="blue",s=1.2)
+    points1 = ax1.scatter(float(x[i][3*k]),float(x[i][(3*k)+1]))#,float(x[i][(3*k)+2]),color="blue",s=2)
   
-  ax1.set_xlim(-bound,bound)
-  ax1.set_ylim(-bound,bound)
-  ax1.set_zlim(-(bound/2),(bound/2))
+  ax1.set_xlim(0,bound)
+  ax1.set_ylim(-bound,0)
+  ax1.set_ylabel("y-axis")
+  #ax1.set_zlim(-bound,bound)
+ #ax1.set_zlabel("z-axis")
   ax1.set_xlabel("Time : " + str(x[i][-1]))
 
   print("Rendered: " , i)

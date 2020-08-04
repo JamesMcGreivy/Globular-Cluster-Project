@@ -2,16 +2,6 @@
 #include <cmath>
 #include <iostream>
 
-
-namespace ODE_Integrator
-{
-
-	template <typename v>
-	double magnitude(const v vector)
-	{
-		return std::sqrt( vector[0]*vector[0] + vector[1]*vector[1] + vector[2]*vector[2] );
-	}
-		
 	//Used to return the position and velocity arrays from the main integrator function
 	struct Data 
 	{
@@ -47,6 +37,16 @@ namespace ODE_Integrator
 		}
 		
 	};	
+
+namespace ODE_Integrator
+{
+
+	template <typename v>
+	double magnitude(const v vector)
+	{
+		return std::sqrt( vector[0]*vector[0] + vector[1]*vector[1] + vector[2]*vector[2] );
+	}
+		
 	
 
 }

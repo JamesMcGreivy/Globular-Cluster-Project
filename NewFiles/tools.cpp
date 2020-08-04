@@ -27,12 +27,14 @@ namespace ODE_Integrator
 
 			for (int p1 = 0; p1 < num_particles; p1 ++)
 			{
+				
 				for (int p2 = 0; p2 < p1; p2++)
 				{
 
 					PE += potential_energy( positions.row(p1), positions.row(p2), masses[p1], masses[p2]);
 
 				}
+			
 			}
 
 			return PE;
