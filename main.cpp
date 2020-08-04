@@ -5,7 +5,6 @@
 #include <vector>
 #include "NewFiles/integrators.cpp"
 #include <chrono>
-#include "NewFiles/tools.cpp"
 
 //Example acceleration function for gravity
 // ( G * m2 / |r|^3 ) * r
