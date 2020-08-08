@@ -1,0 +1,7 @@
+[variables]
+init_pos=[1,0,0]
+init_vel=[0,-1,0]
+dt=0.78539816339
+t_max=62831.8530718
+predict_b=1
+file=data

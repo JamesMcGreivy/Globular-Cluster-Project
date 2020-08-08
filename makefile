@@ -1,7 +1,8 @@
 CC=g++
 
-make:main.cpp
-	@$(CC) -w main.cpp $(epsilon)
-	@./a.out
+make:
+	@$(CC) -w -o run.out  main.cpp
+run:
+	@./run.out $(config)
 clean:
-	@rm a.out
+	@rm run.out
