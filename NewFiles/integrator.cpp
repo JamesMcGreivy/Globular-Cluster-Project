@@ -532,6 +532,7 @@ namespace LorentzForceIntegrator
 			{	
 				substep(1, dt);
 				total_count += count;
+				std::cout << dt << std::endl;
 				count = 0;
 
 			}

@@ -24,7 +24,7 @@ ax1 = fig.add_subplot(111)#, projection='3d')
 
 bound = 10
 i=0
-m = 1
+m = 25
 def animate(i):
   global bound
   ax1.clear()
@@ -34,8 +34,8 @@ def animate(i):
   for k in range((len(x[i]) - 1)//3):
     points1 = ax1.scatter(float(x[i][3*k]),float(x[i][(3*k)+1]))#,float(x[i][(3*k)+2]),color="blue",s=2)
   
-  ax1.set_xlim(-bound,bound)
-  ax1.set_ylim(-bound,bound)
+  ax1.set_xlim(0,25)
+  ax1.set_ylim(-2,4)
   ax1.set_ylabel("y-axis")
   #ax1.set_zlim(-bound,bound)
  #ax1.set_zlabel("z-axis")

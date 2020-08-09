@@ -69,6 +69,7 @@ for i in range(len(time)):
 print(max([abs(h) for h in delH]))
 plt.xlabel("time")
 plt.ylabel("Relative Change in Energy")
+plt.title("Change in Energy Over Time for\nTest Case 4.3 with ΩcΔt = 0.78")
 plt.plot(time,delH)
 plt.show()
 

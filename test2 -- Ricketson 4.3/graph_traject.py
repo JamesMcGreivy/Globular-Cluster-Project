@@ -38,6 +38,7 @@ ax1 = fig.add_subplot(111)
 
 ax1.set_xlabel("x position")
 ax1.set_ylabel("y position")
+plt.title("Trajectory for\nTest Case 4.3 with ΩcΔt = 0.78")
 ax1.set_xlim(0,25)
 ax1.set_ylim(-2,4)
 ax1.plot(x,y)
