@@ -5,5 +5,5 @@ dt=0.0
 t_max=628.318530718
 predict_b=1
 adaptive_timestep=1
-timestep_period_ratio=0.001
+timestep_period_ratio=0.01
 file=data

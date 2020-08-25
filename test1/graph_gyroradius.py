@@ -98,7 +98,7 @@ time_boris = [(t/(2*np.pi)) for t in time_boris]
 plt.xlabel("# of Orbits")
 plt.ylabel("Gyroradius Error")
 
-ax.plot([time_boris[i] for i in range(len(time_boris)) if i % 41 == 0],[del_radius_boris[i] for i in range(len(time_boris)) if i % 41 == 0],label = "Boris, Ωc∆t = 0.01",linewidth=0.85)
+ax.plot([time_boris[i] for i in range(len(time_boris)) if i % 41 == 0],[del_radius_boris[i] for i in range(len(time_boris)) if i % 41 == 0],label = "Boris, Ωc∆t = 0.001",linewidth=0.85)
 ax.plot([time_everhart[i] for i in range(len(time_everhart))],[del_radius_everhart[i] for i in range(len(time_everhart))],label = "Everhart, Ωc∆t = 0.63",linewidth=1)
 
 ax.legend(loc = "upper left", frameon=False, fontsize=12)

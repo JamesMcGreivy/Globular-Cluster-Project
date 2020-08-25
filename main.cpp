@@ -7,7 +7,7 @@
 #include <chrono>
 
 //Electric Field function to Use
-#include "test3/FieldFunctions.cpp"
+#include "test1/FieldFunctions.cpp"
 
 std::string file_name;
 void output_data(std::vector<Data> data)

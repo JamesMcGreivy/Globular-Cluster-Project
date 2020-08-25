@@ -148,7 +148,7 @@ time_boris = [(t/(2*np.pi)) for t in time_boris]
 
 
 plt.plot(time_everhart,delH_everhart,label = "Everhart, Ωc∆t = 0.63",linewidth=0.75)
-plt.plot(time_boris,delH_boris,label = "Boris, Ωc∆t = 0.01",linewidth=0.75)
+plt.plot(time_boris,delH_boris,label = "Boris, Ωc∆t = 0.001",linewidth=0.75)
 
 plt.xlabel("orbits")
 plt.ylabel("Relative Change in Energy")

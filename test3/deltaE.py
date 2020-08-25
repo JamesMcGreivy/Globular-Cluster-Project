@@ -111,7 +111,7 @@ plt.ylabel("Change in Energy")
 ax.spines['right'].set_visible(False)
 ax.spines['top'].set_visible(False)
 
-ax.plot(boris_data_001.times, get_energy_error(boris_data_001), label = "Boris, Ωc∆t = 0.01",linewidth=0.75)
+ax.plot(boris_data_001.times, get_energy_error(boris_data_001), label = "Boris, Ωc∆t = 0.001",linewidth=0.75)
 ax.plot(everhart_data.times, get_energy_error(everhart_data), label = "Everhart, Ωc∆t = 0.63",linewidth=0.75)
 
 ax.legend(loc = "upper left", frameon=False, fontsize=12)

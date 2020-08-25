@@ -89,7 +89,7 @@ plt.setp(ax1, ylabel='μ')
 #mag_moment_boris = np.interp(time_ours,time_boris,mag_moment_boris)
 
 ax1.plot(time_ours,mag_moment_ours, label = "Everhart, Ωc∆t = 0.63",linewidth=0.8)
-ax1.plot(time_boris,mag_moment_boris, label = "Boris, Ωc∆t = 0.01",linewidth=0.8)
+ax1.plot(time_boris,mag_moment_boris, label = "Boris, Ωc∆t = 0.001",linewidth=0.8)
 
 dist1 = len(time_ours)
 dist2 = len(time_boris)

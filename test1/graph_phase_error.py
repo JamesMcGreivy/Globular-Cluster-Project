@@ -141,7 +141,7 @@ boris_phase_error = [abs(predicted_phase_boris[i]-actual_phase_boris[i]) for i i
 
 boris_phase_error = [p if p < (2*np.pi-0.01) else abs(p-(2*np.pi)) for p in boris_phase_error]
 ax.plot(time_everhart,everhart_phase_error,label = "Everhart, Ωc∆t = 0.63",linewidth=1)
-ax.plot(time_boris,boris_phase_error,label = "Boris, Ωc∆t = 0.01",linewidth=1)
+ax.plot(time_boris,boris_phase_error,label = "Boris, Ωc∆t = 0.001",linewidth=1)
 plt.yscale("log")
 
 ax.legend(loc = "upper left", frameon=False, fontsize=12)

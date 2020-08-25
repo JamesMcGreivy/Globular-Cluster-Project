@@ -62,7 +62,7 @@ for i in range(len(pos_boris)):
 
 
 
-ax1.plot(x_boris,y_boris, label = "Boris, Ωc∆t = 0.01",linewidth=0.75)
+ax1.plot(x_boris,y_boris, label = "Boris, Ωc∆t = 0.001",linewidth=0.75)
 ax1.plot(x_everhart,y_everhart, label = "Everhart, Ωc∆t = 0.63",linewidth=0.75)
 
 ax2.plot(x_boris[len(time_boris)//2:1008*len(time_boris)//2000],y_boris[len(time_boris)//2:1008*len(time_boris)//2000],linewidth=0.75)
