@@ -7,7 +7,7 @@
 #include <chrono>
 
 //Electric Field function to Use
-#include "test2 -- Ricketson 4.3/FieldFunctions.cpp"
+#include "test3/FieldFunctions.cpp"
 
 std::string file_name;
 void output_data(std::vector<Data> data)
@@ -28,13 +28,13 @@ void output_data(std::vector<Data> data)
 		{
 			for (int component = 0; component < 3; component ++)
 			{
-				position_data << std::setprecision(25) << data[i][0](particle,component) << ",";
-				velocity_data << std::setprecision(25) << data[i][1](particle,component) << ",";
+				position_data << std::setprecision(16) << data[i][0](particle,component) << ",";
+				velocity_data << std::setprecision(16) << data[i][1](particle,component) << ",";
 			}
 		}
 
-		position_data << data[i].time << std::setprecision(25) << std::endl;
-		velocity_data << data[i].time << std::setprecision(25) << std::endl;
+		position_data << data[i].time << std::setprecision(16) << std::endl;
+		velocity_data << data[i].time << std::setprecision(16) << std::endl;
 	}
 
 }
@@ -91,25 +91,28 @@ void read_config()
     }
 }
 
+
 int main(int argc, char *argv[])
 {
-	config_path = argv[1];
-	read_config();
-
 	Eigen::Matrix<double,1,3> pos;
 	Eigen::Matrix<double,1,3> vel;
 
-	pos << 	configs[0],configs[1],configs[2];
-	vel <<	configs[2],configs[4],configs[5];
+    //Reads in all of the command line arguments from the makefile
+	config_path = argv[1];
+    read_config();
+    pos << 	configs[0],configs[1],configs[2];
+	vel <<	configs[3],configs[4],configs[5];
 	bool predict_b = configs[8];
 	bool use_adaptive_timestep = configs[9];
 	double adaptive_factor = configs[10];
+ 
 
 	double t_init = 0;
 	double dt = configs[6];
 	double t_final = configs[7];
 
-	std::vector<Data> data1 = LorentzForceIntegrator::Integrate(E, B, t_init, t_final, pos, vel, dt, predict_b, use_adaptive_timestep, adaptive_factor);
+	//std::vector<Data> data1 = LorentzForceIntegrator::Integrate(E, B, t_init, t_final, pos, vel, dt, predict_b, use_adaptive_timestep, adaptive_factor);
+    std::vector<Data> data1 = BorisIntegrator::Integrate(E, B, t_init, t_final, pos, vel, dt, predict_b, use_adaptive_timestep, adaptive_factor);
 	output_data(data1);
 
 	return 0;

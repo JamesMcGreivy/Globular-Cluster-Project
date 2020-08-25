@@ -64,7 +64,7 @@ for i in range(len(time)):
 	if i == 0:
 		E_0 = total_e
 
-	delH.append( (total_e - E_0) )
+	delH.append( (total_e - E_0))
 
 print(max([abs(h) for h in delH]))
 plt.xlabel("time")

@@ -303,10 +303,6 @@ namespace LorentzForceIntegrator
 				}
 				else
 				{	
-					if (use_adaptive_timestep)
-					{
-						dt = (1/Omega) * (2*M_PI) * (adaptive_factor);
-					}
 
 					E_par = (const_E.dot(const_B)/(Omega*Omega))*const_B;
 					V_par = (V_0.dot(const_B)/(Omega*Omega))*const_B;
@@ -484,6 +480,19 @@ namespace LorentzForceIntegrator
 
 			}
 
+			if (use_adaptive_timestep)
+			{
+				init_substep(1);
+				double Omega = std::max( 
+								magnitude(B(init_pos.row(0),init_vel.row(0),init_t)),
+								magnitude(B(positions.row(0),velocities.row(0),t))
+								);
+				if (Omega != 0)
+				{
+					dt = (1/Omega) * (2*M_PI) * (adaptive_factor);
+				}
+			}
+
 			if (use_predicted_b)
 			{
 				find_initial_g_values(dt);
@@ -528,11 +537,11 @@ namespace LorentzForceIntegrator
 			}
 			
 			global_error = max_del_b8 / max_y_pp;
-			if (count > 4 and (global_error <= 1e-15 or count >= 30))
+			if (count > 4 and (global_error <= 1e-15 or count >= 20))
 			{	
 				substep(1, dt);
+				std::cout << t << "  " << count << std::endl;
 				total_count += count;
-				std::cout << dt << std::endl;
 				count = 0;
 
 			}
@@ -570,6 +579,176 @@ namespace LorentzForceIntegrator
 
 	}	
 
+}
+
+namespace BorisIntegrator
+{
+
+	template <typename v>
+	double magnitude(const v vector)
+	{
+		return std::sqrt( vector[0]*vector[0] + vector[1]*vector[1] + vector[2]*vector[2] );
+	}
+
+	class BorisIntegrator
+	{
+	public:
+		double t = 0;
+		double dt;
+		
+		int num_particles;
+		Eigen::MatrixXd positions;
+		Eigen::MatrixXd velocities;
+
+		bool use_adaptive_timestep;
+		double adaptive_factor;
+
+		Eigen::Vector3d (*E)(const Eigen::Vector3d &pos, const Eigen::Vector3d &vel, double t);
+		Eigen::Vector3d (*B)(const Eigen::Vector3d &pos, const Eigen::Vector3d &vel, double t);
+
+		BorisIntegrator(const Eigen::MatrixXd &init_pos, const Eigen::MatrixXd &init_vel, Eigen::Vector3d (*E_function)(const Eigen::Vector3d &pos, const Eigen::Vector3d &vel, double t), Eigen::Vector3d (*B_function)(const Eigen::Vector3d &pos, const Eigen::Vector3d &vel, double t), double init_t, double init_dt, bool adaptive_timestep = true, double adaptive_period_factor = 0.125)
+		{
+
+			positions = init_pos;
+			velocities = init_vel;
+
+			E = E_function;
+			B = B_function;
+
+			t = init_t;
+			dt = init_dt;
+
+			num_particles = positions.rows();
+
+			use_adaptive_timestep = adaptive_timestep;
+			adaptive_factor = adaptive_period_factor;
+
+		}
+
+		void step()
+		{
+			if (use_adaptive_timestep)
+			{
+				double Omega = magnitude(B(positions.row(0),velocities.row(0),t));
+				if (Omega != 0)
+				{
+					dt = (1/Omega) * (2*M_PI) * (adaptive_factor);
+				}
+			} 
+
+			double qmdt = 0.5*dt;
+			double dt2 = 0.5*dt;
+
+			Eigen::Vector3d pos(0,0,0);
+			Eigen::Vector3d vel(0,0,0);
+			
+			Eigen::Vector3d E_field(0,0,0);
+			Eigen::Vector3d B_field(0,0,0);
+			
+			Eigen::Vector3d vm(0,0,0);
+			Eigen::Vector3d t_(0,0,0);
+			Eigen::Vector3d s(0,0,0);
+			Eigen::Vector3d cp(0,0,0);
+			Eigen::Vector3d vprime(0,0,0);
+			Eigen::Vector3d vp(0,0,0);
+
+			
+
+			for (int i = 0; i < num_particles; i++)
+			{
+
+				pos = positions.row(i);
+				vel = velocities.row(i);
+
+				double qmdt = 0.5*dt;
+				double dt2 = 0.5*dt;
+
+			    pos[0] = pos[0] + dt2*vel[0];
+			    pos[1] = pos[1] + dt2*vel[1];
+			    pos[2] = pos[2] + dt2*vel[2];  
+
+			   	E_field = E(pos,vel,t);
+			   	double E_0 = E_field[0];
+			   	double E_1 = E_field[1];
+				double E_2 = E_field[2];
+			    
+			    B_field = B(pos,vel,t);
+			   	double B_0 = B_field[0];
+			   	double B_1 = B_field[1];
+				double B_2 = B_field[2];
+
+			    double vm_0 = vel[0] + qmdt*E_0;
+			    double vm_1 = vel[1] + qmdt*E_1;
+			    double vm_2 = vel[2] + qmdt*E_2;
+
+			    double t_0 = qmdt*B_0;
+			    double t_1 = qmdt*B_1;
+			    double t_2 = qmdt*B_2;
+
+			    double tNorm = t_0*t_0 + t_1*t_1 + t_2*t_2;
+			    double s_0 = 2*t_0/(1+tNorm);
+			    double s_1 = 2*t_1/(1+tNorm);
+			    double s_2 = 2*t_2/(1+tNorm);
+
+			    double cp_0 =  vm_1*t_2 - vm_2*t_1;
+			    double cp_1 =  vm_2*t_0 - vm_0*t_2;
+			    double cp_2 =  vm_0*t_1 - vm_1*t_0;
+
+			    double vprime_0 = vm_0 + cp_0;
+			    double vprime_1 = vm_1 + cp_1;
+			    double vprime_2 = vm_2 + cp_2;
+			      
+			    cp_0 =  vprime_1*s_2 - vprime_2*s_1;
+			    cp_1 =  vprime_2*s_0 - vprime_0*s_2;
+			    cp_2 =  vprime_0*s_1 - vprime_1*s_0;
+
+			    double vp_0 = vm_0 + cp_0;
+			    double vp_1 = vm_1 + cp_1;
+			    double vp_2 = vm_2 + cp_2;
+
+			    vel[0] = vp_0 + qmdt*E_0;
+			    vel[1] = vp_1 + qmdt*E_1;
+			    vel[2] = vp_2 + qmdt*E_2;
+
+			    pos[0] = pos[0] + dt2*vel[0];
+			    pos[1] = pos[1] + dt2*vel[1];
+			    pos[2] = pos[2] + dt2*vel[2];
+
+			    positions.row(i) = pos;
+			    velocities.row(i) = vel;
+
+			}
+
+			t += dt;
+
+		}
+
+	};
+
+	std::vector<Data> Integrate(Eigen::Vector3d (*E_function)(const Eigen::Vector3d &pos, const Eigen::Vector3d &vel, double t), Eigen::Vector3d (*B_function)(const Eigen::Vector3d &pos, const Eigen::Vector3d &vel, double t), double t_initial, double t_final, const Eigen::MatrixXd &init_pos, const Eigen::MatrixXd &init_vel, double dt, bool use_predicted_b = true, bool use_adaptive_timestep = true, double adaptive_factor = 0.125)
+	{
+
+		std::vector<Data> return_data;
+		BorisIntegrator integrator = BorisIntegrator(init_pos, init_vel, E_function, B_function, t_initial, dt, use_adaptive_timestep, adaptive_factor);
+		
+		return_data.push_back( Data(integrator.positions, integrator.velocities, integrator.t) );
+
+		while (integrator.t < t_final)
+		{
+			
+			integrator.step();
+
+
+			if (integrator.t <= t_final)
+			{
+				return_data.push_back( Data(integrator.positions, integrator.velocities, integrator.t) );	
+			}
+		
+		}
+
+		return return_data;
+
+	}	
 }
 
 
