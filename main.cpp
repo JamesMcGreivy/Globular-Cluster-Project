@@ -7,7 +7,7 @@
 #include <chrono>
 
 //Electric Field function to Use
-#include "test1/FieldFunctions.cpp"
+#include "test3/FieldFunctions.cpp"
 
 std::string file_name;
 void output_data(std::vector<Data> data)
@@ -111,8 +111,8 @@ int main(int argc, char *argv[])
 	double dt = configs[6];
 	double t_final = configs[7];
 
-	//std::vector<Data> data1 = LorentzForceIntegrator::Integrate(E, B, t_init, t_final, pos, vel, dt, predict_b, use_adaptive_timestep, adaptive_factor);
-    std::vector<Data> data1 = BorisIntegrator::Integrate(E, B, t_init, t_final, pos, vel, dt, predict_b, use_adaptive_timestep, adaptive_factor);
+	std::vector<Data> data1 = LorentzForceIntegrator::Integrate(E, B, t_init, t_final, pos, vel, dt, predict_b, use_adaptive_timestep, adaptive_factor);
+    //std::vector<Data> data1 = BorisIntegrator2::Integrate(E, B, t_init, t_final, pos, vel, dt, predict_b, use_adaptive_timestep, adaptive_factor);
 	output_data(data1);
 
 	return 0;

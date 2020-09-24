@@ -50,18 +50,18 @@ with open(vel_data_everhart) as csvfile1:
 
 		vel_everhart.append(vel)
 
-pos_data_boris = 'Boris 0.001/pos_data.csv'
-vel_data_boris = 'Boris 0.001/vel_data.csv'
+pos_data_boris_001 = 'Boris 0.001/pos_data.csv'
+vel_data_boris_001 = 'Boris 0.001/vel_data.csv'
 
-pos_boris = []
-vel_boris = []
-time_boris = []
-with open(pos_data_boris) as csvfile1:
+pos_boris_001 = []
+vel_boris_001 = []
+time_boris_001 = []
+with open(pos_data_boris_001) as csvfile1:
 	read_position = csv.reader(csvfile1, delimiter = ',')
 
 	for row in read_position:
 
-		time_boris.append( float(row[-1]) )
+		time_boris_001.append( float(row[-1]) )
 
 		pos = []
 
@@ -69,9 +69,9 @@ with open(pos_data_boris) as csvfile1:
 
 			pos.append( [ float(row[i]), float(row[i+1]), float(row[i+2]) ] )
 
-		pos_boris.append(pos)
+		pos_boris_001.append(pos)
 
-with open(vel_data_boris) as csvfile1:
+with open(vel_data_boris_001) as csvfile1:
 	read_velocity = csv.reader(csvfile1, delimiter = ',')
 
 	for row in read_velocity:
@@ -82,24 +82,74 @@ with open(vel_data_boris) as csvfile1:
 
 	  		vel.append([float(row[i]),float(row[i+1]),float(row[i+2])])
 
-		vel_boris.append(vel)
+		vel_boris_001.append(vel)
+
+pos_data_boris_1 = 'Boris 0.1/pos_data.csv'
+vel_data_boris_1 = 'Boris 0.1/vel_data.csv'
+
+pos_boris_1 = []
+vel_boris_1 = []
+time_boris_1 = []
+with open(pos_data_boris_1) as csvfile1:
+	read_position = csv.reader(csvfile1, delimiter = ',')
+
+	for row in read_position:
+
+		time_boris_1.append( float(row[-1]) )
+
+		pos = []
+
+		for i in range((len(row)-1) // 3):
+
+			pos.append( [ float(row[i]), float(row[i+1]), float(row[i+2]) ] )
+
+		pos_boris_1.append(pos)
+
+with open(vel_data_boris_1) as csvfile1:
+	read_velocity = csv.reader(csvfile1, delimiter = ',')
+
+	for row in read_velocity:
+
+		vel = []
+
+		for i in range((len(row)-1) // 3):
+
+	  		vel.append([float(row[i]),float(row[i+1]),float(row[i+2])])
+
+		vel_boris_1.append(vel)
+
 
 
 radius_everhart = [pos_everhart[i][0][0]**2 + pos_everhart[i][0][1]**2 for i in range(len(pos_everhart))]
 del_radius_everhart = [abs(1-r) for r in radius_everhart]
 time_everhart = [(t/(2*np.pi)) for t in time_everhart]
 
-radius_boris = [pos_boris[i][0][0]**2 + pos_boris[i][0][1]**2 for i in range(len(pos_boris))]
-del_radius_boris = [abs(1-r) for r in radius_boris]
-time_boris = [(t/(2*np.pi)) for t in time_boris]
+radius_boris_001 = [pos_boris_001[i][0][0]**2 + pos_boris_001[i][0][1]**2 for i in range(len(pos_boris_001))]
+del_radius_boris_001 = [abs(1-r) for r in radius_boris_001]
+time_boris_001 = [(t/(2*np.pi)) for t in time_boris_001]
 
+
+radius_boris_1 = [pos_boris_1[i][0][0]**2 + pos_boris_1[i][0][1]**2 for i in range(len(pos_boris_1))]
+del_radius_boris_1 = [abs(1-r) for r in radius_boris_1]
+time_boris_1 = [(t/(2*np.pi)) for t in time_boris_1]
+
+time_boris_001 = [time_boris_001[i] for i in range(len(time_boris_001)) if i%5000 == 0]
+del_radius_boris_001 = [del_radius_boris_001[i] for i in range(len(del_radius_boris_001)) if i%5000 == 0]
+
+time_boris_1 = [time_boris_1[i] for i in range(len(time_boris_1)) if i%50 == 0]
+del_radius_boris_1 = [del_radius_boris_1[i] for i in range(len(del_radius_boris_1)) if i%50 == 0]
+
+time_everhart = [time_everhart[i] for i in range(len(time_everhart)) if i%50 == 0]
+del_radius_everhart = [del_radius_everhart[i] for i in range(len(del_radius_everhart)) if i%50 == 0]
 
 
 plt.xlabel("# of Orbits")
 plt.ylabel("Gyroradius Error")
 
-ax.plot([time_boris[i] for i in range(len(time_boris)) if i % 41 == 0],[del_radius_boris[i] for i in range(len(time_boris)) if i % 41 == 0],label = "Boris, Ωc∆t = 0.001",linewidth=0.85)
-ax.plot([time_everhart[i] for i in range(len(time_everhart))],[del_radius_everhart[i] for i in range(len(time_everhart))],label = "Everhart, Ωc∆t = 0.63",linewidth=1)
+ax.plot(time_everhart,del_radius_everhart,label = "Everhart, Ωc∆t = 0.63",linewidth=0.70)
+ax.plot(time_boris_001,del_radius_boris_001,label = "Boris, Ωc∆t = 0.001",linewidth=0.70)
+ax.plot(time_boris_1,del_radius_boris_1,label = "Boris, Ωc∆t = 0.1",linewidth=0.70)
+
 
 ax.legend(loc = "upper left", frameon=False, fontsize=12)
 plt.savefig('radius_errors.eps', format='eps')

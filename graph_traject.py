@@ -5,11 +5,7 @@ import ast
 from statistics import mean
 import configparser
 
-config = configparser.RawConfigParser()
-config.read('config.txt')
-config_dict = dict(config.items('variables'))
-
-pos_data = 'pos_'+config_dict['file']+'.csv'
+pos_data = 'pos_data.csv'
 
 positions = []
 time = []
@@ -33,13 +29,23 @@ y = []
 for i in range(len(positions)):
 	x.append(positions[i][0][0])
 	y.append(positions[i][0][1])
+
 fig = plt.figure()
 ax1 = fig.add_subplot(111)
 
 ax1.set_xlabel("x position")
 ax1.set_ylabel("y position")
 plt.title("Trajectory for\nTest Case 4.3 with ΩcΔt = 0.78")
-ax1.set_xlim(-1,1)
-ax1.set_ylim(-1,1)
-ax1.plot(x,y)
+
+ax1.plot(time,x)
+ax1.plot(time,y)
+
+#ax1.plot(x,y)
+print(max(y[:len(y)//2]))
+
+print(max(y[len(y)//2:]))
+
 plt.show()
+
+
+

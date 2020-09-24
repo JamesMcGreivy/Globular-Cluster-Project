@@ -53,15 +53,15 @@ with open(vel_data_everhart) as csvfile1:
 pos_data_boris = 'Boris 0.001/pos_data.csv'
 vel_data_boris = 'Boris 0.001/vel_data.csv'
 
-pos_boris = []
-vel_boris = []
-time_boris = []
+pos_boris_001 = []
+vel_boris_001 = []
+time_boris_001 = []
 with open(pos_data_boris) as csvfile1:
 	read_position = csv.reader(csvfile1, delimiter = ',')
 
 	for row in read_position:
 
-		time_boris.append( float(row[-1]) )
+		time_boris_001.append( float(row[-1]) )
 
 		pos = []
 
@@ -69,7 +69,7 @@ with open(pos_data_boris) as csvfile1:
 
 			pos.append( [ float(row[i]), float(row[i+1]), float(row[i+2]) ] )
 
-		pos_boris.append(pos)
+		pos_boris_001.append(pos)
 
 with open(vel_data_boris) as csvfile1:
 	read_velocity = csv.reader(csvfile1, delimiter = ',')
@@ -82,7 +82,112 @@ with open(vel_data_boris) as csvfile1:
 
 	  		vel.append([float(row[i]),float(row[i+1]),float(row[i+2])])
 
-		vel_boris.append(vel)
+		vel_boris_001.append(vel)
+
+
+pos_data_boris = 'Boris 0.1/pos_data.csv'
+vel_data_boris = 'Boris 0.1/vel_data.csv'
+
+pos_boris_1 = []
+vel_boris_1 = []
+time_boris_1 = []
+with open(pos_data_boris) as csvfile1:
+	read_position = csv.reader(csvfile1, delimiter = ',')
+
+	for row in read_position:
+
+		time_boris_1.append( float(row[-1]) )
+
+		pos = []
+
+		for i in range((len(row)-1) // 3):
+
+			pos.append( [ float(row[i]), float(row[i+1]), float(row[i+2]) ] )
+
+		pos_boris_1.append(pos)
+
+with open(vel_data_boris) as csvfile1:
+	read_velocity = csv.reader(csvfile1, delimiter = ',')
+
+	for row in read_velocity:
+
+		vel = []
+
+		for i in range((len(row)-1) // 3):
+
+	  		vel.append([float(row[i]),float(row[i+1]),float(row[i+2])])
+
+		vel_boris_1.append(vel)
+
+pos_data_boris_2_1 = 'Boris 2 0.1/pos_data.csv'
+vel_data_boris_2_1 = 'Boris 2 0.1/vel_data.csv'
+
+pos_boris_2_1 = []
+vel_boris_2_1 = []
+time_boris_2_1 = []
+with open(pos_data_boris_2_1) as csvfile1:
+	read_position = csv.reader(csvfile1, delimiter = ',')
+
+	for row in read_position:
+
+		time_boris_2_1.append( float(row[-1]) )
+
+		pos = []
+
+		for i in range((len(row)-1) // 3):
+
+			pos.append( [ float(row[i]), float(row[i+1]), float(row[i+2]) ] )
+
+		pos_boris_2_1.append(pos)
+
+with open(vel_data_boris_2_1) as csvfile1:
+	read_velocity = csv.reader(csvfile1, delimiter = ',')
+
+	for row in read_velocity:
+
+		vel = []
+
+		for i in range((len(row)-1) // 3):
+
+	  		vel.append([float(row[i]),float(row[i+1]),float(row[i+2])])
+
+		vel_boris_2_1.append(vel)
+
+
+pos_data_boris_2_001 = 'Boris 2 0.001/pos_data.csv'
+vel_data_boris_2_001 = 'Boris 2 0.001/vel_data.csv'
+
+pos_boris_2_001 = []
+vel_boris_2_001 = []
+time_boris_2_001 = []
+with open(pos_data_boris_2_001) as csvfile1:
+	read_position = csv.reader(csvfile1, delimiter = ',')
+
+	for row in read_position:
+
+		time_boris_2_001.append( float(row[-1]) )
+
+		pos = []
+
+		for i in range((len(row)-1) // 3):
+
+			pos.append( [ float(row[i]), float(row[i+1]), float(row[i+2]) ] )
+
+		pos_boris_2_001.append(pos)
+
+with open(vel_data_boris_2_001) as csvfile1:
+	read_velocity = csv.reader(csvfile1, delimiter = ',')
+
+	for row in read_velocity:
+
+		vel = []
+
+		for i in range((len(row)-1) // 3):
+
+	  		vel.append([float(row[i]),float(row[i+1]),float(row[i+2])])
+
+		vel_boris_2_001.append(vel)
+
 
 
 def total_kinetic_energy(velocities):
@@ -134,25 +239,71 @@ for i in range(len(time_everhart)):
 time_everhart = [(t/(2*np.pi)) for t in time_everhart]
 
 E_0 = 0
-delH_boris = []
+delH_boris_001 = []
 
-for i in range(len(time_boris)):
+for i in range(len(time_boris_001)):
 	#total_e = total_kinetic_energy(velocities[i]) + total_potential_energy(positions[i])
-	total_e = total_energy(pos_boris[i],vel_boris[i])
+	total_e = total_energy(pos_boris_001[i],vel_boris_001[i])
 
 	if i == 0:
 		E_0 = total_e
 
-	delH_boris.append( abs((total_e - E_0)/E_0) )
-time_boris = [(t/(2*np.pi)) for t in time_boris]
+	delH_boris_001.append( abs((total_e - E_0)/E_0) )
+time_boris_001 = [(t/(2*np.pi)) for t in time_boris_001]
+
+E_0 = 0
+delH_boris_1 = []
+
+for i in range(len(time_boris_1)):
+	#total_e = total_kinetic_energy(velocities[i]) + total_potential_energy(positions[i])
+	total_e = total_energy(pos_boris_1[i],vel_boris_1[i])
+
+	if i == 0:
+		E_0 = total_e
+
+	delH_boris_1.append( abs((total_e - E_0)/E_0) )
+time_boris_1 = [(t/(2*np.pi)) for t in time_boris_1]
+
+
+E_0 = 0
+delH_boris_2_1 = []
+
+for i in range(len(time_boris_2_1)):
+	#total_e = total_kinetic_energy(velocities[i]) + total_potential_energy(positions[i])
+	total_e = total_energy(pos_boris_2_1[i],vel_boris_2_1[i])
+
+	if i == 0:
+		E_0 = total_e
+
+	delH_boris_2_1.append( abs((total_e - E_0)/E_0) )
+time_boris_2_1 = [(t/(2*np.pi)) for t in time_boris_2_1]
+
+
+E_0 = 0
+delH_boris_2_001 = []
+
+for i in range(len(time_boris_2_001)):
+	#total_e = total_kinetic_energy(velocities[i]) + total_potential_energy(positions[i])
+	total_e = total_energy(pos_boris_2_001[i],vel_boris_2_001[i])
+
+	if i == 0:
+		E_0 = total_e
+
+	delH_boris_2_001.append( abs((total_e - E_0)/E_0) )
+time_boris_2_001 = [(t/(2*np.pi)) for t in time_boris_2_001]
+
 
 
 plt.plot(time_everhart,delH_everhart,label = "Everhart, Ωc∆t = 0.63",linewidth=0.75)
-plt.plot(time_boris,delH_boris,label = "Boris, Ωc∆t = 0.001",linewidth=0.75)
+plt.plot(time_boris_001,delH_boris_001,label = "Boris, Ωc∆t = 0.001",linewidth=0.75)
+plt.plot(time_boris_1,delH_boris_1,label = "Boris, Ωc∆t = 0.1",linewidth=0.75)
+plt.plot(time_boris_2_001,delH_boris_2_001,label = "Boris (tan), Ωc∆t = 0.001",linewidth=0.75)
+plt.plot(time_boris_2_1,delH_boris_2_1,label = "Boris (tan), Ωc∆t = 0.1",linewidth=0.75)
 
+
+plt.ylim([0,8e-14])
 plt.xlabel("orbits")
 plt.ylabel("Relative Change in Energy")
-plt.ylim([0,2e-14])
 
 ax.legend(loc = "upper left", frameon=False, fontsize=12)
 plt.savefig('energy_errors.eps', format='eps')
