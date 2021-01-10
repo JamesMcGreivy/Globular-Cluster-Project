@@ -1,9 +1,0 @@
-[variables]
-init_pos=[1,0,0]
-init_vel=[0,-1,0]
-dt=0.0
-t_max=628.318530718
-predict_b=1
-adaptive_timestep=1
-OmegaCDeltaT=0.001
-file=data

@@ -146,10 +146,9 @@ del_radius_everhart = [del_radius_everhart[i] for i in range(len(del_radius_ever
 plt.xlabel("# of Orbits")
 plt.ylabel("Gyroradius Error")
 
-ax.plot(time_everhart,del_radius_everhart,label = "Everhart, Ωc∆t = 0.63",linewidth=0.70)
-ax.plot(time_boris_001,del_radius_boris_001,label = "Boris, Ωc∆t = 0.001",linewidth=0.70)
-ax.plot(time_boris_1,del_radius_boris_1,label = "Boris, Ωc∆t = 0.1",linewidth=0.70)
-
+ax.plot(time_everhart,del_radius_everhart,label = "Mixed-Basis Collocation, ∆t = T",linewidth=1.2)
+ax.plot(time_boris_001,del_radius_boris_001,label = "Boris, ∆t = T/1000",linewidth=0.75)
+ax.plot(time_boris_1,del_radius_boris_1,label = "Boris, ∆t = T/100",linewidth=0.75)
 
 ax.legend(loc = "upper left", frameon=False, fontsize=12)
 plt.savefig('radius_errors.eps', format='eps')

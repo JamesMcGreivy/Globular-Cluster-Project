@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 from matplotlib import cm
 import csv
 import numpy as np
+import pandas as pd
 
 plt.rcParams['font.family'] = 'sans-serif'
 plt.rcParams['font.size'] = 14
@@ -18,91 +19,53 @@ ax1.yaxis.set_tick_params(which='minor', size=5, width=2, direction='in')
 ax1.spines['right'].set_visible(False)
 ax1.spines['top'].set_visible(False)
 
-#Get Everhart Data
-data_everhart = 'Everhart 0.63/pos_data.csv'
+#Get all of the data for boris 0.01
+boris_data_01 = pd.read_csv('test2/data/boris100.csv').values
+pos_boris_01 = boris_data_01[:,:3]
+vel_boris_01 = boris_data_01[:,3:6]
+time_boris_01 = boris_data_01[:,6]
 
-pos_everhart = []
-time_everhart = []
-with open(data_everhart) as csvfile:
-	read_position = csv.reader(csvfile, delimiter = ',')
-
-	for row in read_position:
-
-		time_everhart.append( float(row[3]) )
-		pos = [ float(row[0]), float(row[1]), float(row[2]) ]
-		pos_everhart.append(pos)
-
-#Get Boris_001 Data
-data_boris_001 = 'Boris 0.001/pos_data.csv'
-
-pos_boris_001 = []
-time_boris_001 = []
-with open(data_boris_001) as csvfile:
-	read_position = csv.reader(csvfile, delimiter = ',')
-
-	for row in read_position:
-
-		time_boris_001.append( float(row[3]) )
-		pos = [ float(row[0]), float(row[1]), float(row[2]) ]
-		pos_boris_001.append(pos)
-
-#Get Boris_01 Data
-data_boris_1 = 'Boris 0.1/pos_data.csv'
-
-pos_boris_1 = []
-time_boris_1 = []
-with open(data_boris_1) as csvfile:
-	read_position = csv.reader(csvfile, delimiter = ',')
-
-	for row in read_position:
-
-		time_boris_1.append( float(row[3]) )
-		pos = [ float(row[0]), float(row[1]), float(row[2]) ]
-		pos_boris_1.append(pos)
+#Get all of the data for boris 0.001
+boris_data_001 = pd.read_csv('test2/data/boris1000.csv').values
+pos_boris_001 = boris_data_001[:,:3]
+vel_boris_001 = boris_data_001[:,3:6]
+time_boris_001 = boris_data_001[:,6]
 
 
+#Get all of the data for collocation 0.2
+c_data_5 = pd.read_csv('test2/data/collocation5.csv').values
+pos_c_5 = c_data_5[:,:3]
+vel_c_5 = c_data_5[:,3:6]
+time_c_5 = c_data_5[:,6]
+
+#Get all of the data for collocation 0.1
+c_data_10 = pd.read_csv('test2/data/collocation10.csv').values
+pos_c_10 = c_data_10[:,:3]
+vel_c_10 = c_data_10[:,3:6]
+time_c_10 = c_data_10[:,6]
 
 
-x_everhart =[]
-y_everhart = []
-for i in range(len(pos_everhart)):
-	x_everhart.append(pos_everhart[i][0])
-	y_everhart.append(pos_everhart[i][1])
+ax1.plot(time_boris_01, pos_boris_01[:,0], label = "Boris, ∆t = T/100",linewidth=1.0,color="orange")
+ax1.plot(time_boris_001, pos_boris_001[:,0], label = "Boris, ∆t = T/1000",linewidth=1.0,color="indianred")
+ax1.plot(time_c_10, pos_c_10[:,0], label = "Mixed Basis Collocation, ∆t = T/10",linewidth=1.0,color="mediumblue")
+ax1.plot(time_c_5, pos_c_5[:,0], label = "Mixed Basis Collocation, ∆t = T/5",linewidth=1.0)
 
-x_boris_1 =[]
-y_boris_1 = []
-for i in range(len(pos_boris_1)):
-	x_boris_1.append(pos_boris_1[i][0])
-	y_boris_1.append(pos_boris_1[i][1])
-
-x_boris_001 =[]
-y_boris_001 = []
-for i in range(len(pos_boris_001)):
-	x_boris_001.append(pos_boris_001[i][0])
-	y_boris_001.append(pos_boris_001[i][1])
-
-
-
-
-ax1.plot(time_everhart,x_everhart, label = "Everhart, Ωc∆t = 0.63",linewidth=0.75,color="mediumblue")
-ax1.plot(time_boris_1,x_boris_1, label = "Boris, Ωc∆t = 0.1",linewidth=0.75,color="orange")
-ax1.plot(time_boris_001,x_boris_001, label = "Boris, Ωc∆t = 0.001",linewidth=0.75,color="indianred",linestyle="dashed")
-
-
-ax1.set_xlim(450,600)
-ax1.set_ylim(-1.5,1.5)
+ax1.set_xlim(5850,6000)
+ax1.set_ylim(-1.0,2.5)
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 from mpl_toolkits.axes_grid1.inset_locator import mark_inset
 
-axins = inset_axes(ax1, 1.5, 1.5, loc=2)
-x1, x2 = 587, 600
-y1, y2 = -0.9, 0.3
+axins = inset_axes(ax1, 1.30, 1.6, loc=2)
+x1, x2 = 5958, 5962
+y1, y2 = -0.10, 0.9
 axins.set_xlim(x1, x2)
 axins.set_ylim(y1, y2)
 
-axins.plot(time_everhart,x_everhart, label = "Everhart, Ωc∆t = 0.63",linewidth=0.75,color="mediumblue")
-axins.plot(time_boris_1,x_boris_1, label = "Boris, Ωc∆t = 0.1",linewidth=0.75,color="orange")
-axins.plot(time_boris_001,x_boris_001, label = "Boris, Ωc∆t = 0.001",linewidth=0.75,color="indianred",linestyle="dashed")
+axins.plot(time_boris_01, pos_boris_01[:,0], label = "Boris, ∆t = T/100",linewidth=1.0,color="orange")
+axins.plot(time_boris_001, pos_boris_001[:,0], label = "Boris, ∆t = T/1000",linewidth=1.0,color="indianred")
+axins.plot(time_c_10, pos_c_10[:,0], label = "Mixed Basis Collocation, ∆t = T/10",linewidth=1.0,color="mediumblue")
+axins.plot(time_c_5, pos_c_5[:,0], label = "Mixed Basis Collocation, ∆t = T/5",linewidth=1.0)
+
 
 plt.yticks(visible=False)
 plt.xticks(visible=False)
@@ -114,6 +77,4 @@ plt.setp(ax1, xlabel='t')
 plt.setp(ax1, ylabel='x')
 
 ax1.legend(loc = "upper right", frameon=True, fontsize=12)
-plt.savefig('x_trajectory.eps', format='eps')
-
-plt.show()
+plt.savefig('test2/x_trajectory.eps', format='eps')
